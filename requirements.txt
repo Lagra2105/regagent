@@ -1,0 +1,3 @@
+fastapi
+uvicorn[standard]
+agentcost @ git+https://github.com/Lagra2105/agentcost.git
