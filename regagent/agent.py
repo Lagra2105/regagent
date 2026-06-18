@@ -19,6 +19,7 @@ from agentcost import track, SQLiteSink
 from .store import DocStore, Chunk
 from .sparse import BM25Index
 from .fusion import rrf
+from .rerank import rerank
 from .graph import KnowledgeGraph
 from .provenance import score as score_provenance, ProvenanceReport
 
@@ -74,12 +75,14 @@ def answer_question(store: DocStore, question: str, customer: str = "demo",
         run.record_response(r, step="classify")
 
         # 2) HYBRID retrieval: dense (meaning) + sparse (exact terms), fused by RRF
-        dense = store.search(question, k=5)
+        dense = store.search(question, k=6)
         if bm25 is not None:
-            sparse = bm25.search(question, k=5)
-            hits = rrf(dense, sparse, top=4)
+            sparse = bm25.search(question, k=6)
+            fused = rrf(dense, sparse, top=6)
         else:
-            hits = dense
+            fused = dense
+        # 2a) RERANK — precision pass: put the most relevant article on top
+        hits = rerank(question, fused, top=4)
         sources = [c.source for c, _ in hits]
         by_source = {c.source: c.text for c, _ in hits}
 
