@@ -1,0 +1,42 @@
+"""Golden evaluation set — compliance questions with the article(s) that should
+ground a correct answer. This is the yardstick: without it you can't claim
+accuracy, and a compliance buyer's first question is "how accurate is it?".
+
+Each item: (question, {acceptable article-label substrings}). A question passes
+retrieval if at least one expected article is retrieved/cited.
+"""
+
+GOLDEN = [
+    ("Is social scoring of citizens allowed under the AI Act?",
+     {"Article 5(1)(c)"}),
+    ("Are subliminal or manipulative AI techniques prohibited?",
+     {"Article 5(1)(a)"}),
+    ("Can AI exploit vulnerable people due to age or disability?",
+     {"Article 5(1)(b)"}),
+    ("Is real-time remote biometric identification in public allowed?",
+     {"Article 5(1)(h)"}),
+    ("How is an AI system classified as high-risk?",
+     {"Article 6"}),
+    ("What must providers do about risk management for high-risk AI?",
+     {"Article 9"}),
+    ("What are the data quality requirements for training high-risk AI?",
+     {"Article 10"}),
+    ("Is human oversight required for high-risk AI systems?",
+     {"Article 14"}),
+    ("What accuracy and robustness must high-risk AI achieve?",
+     {"Article 15"}),
+    ("Do I need to tell users they are interacting with an AI?",
+     {"Article 50"}),
+    ("Must generative AI mark its outputs as AI-generated?",
+     {"Article 50"}),
+    ("What obligations apply to providers of high-risk AI?",
+     {"Article 16"}),
+    ("What must deployers of high-risk AI systems do?",
+     {"Article 26"}),
+    ("What are the obligations for general-purpose AI models?",
+     {"Article 53"}),
+    ("What rules apply to GPAI models with systemic risk?",
+     {"Article 55"}),
+    ("What are the penalties for using prohibited AI practices?",
+     {"Article 99"}),
+]
