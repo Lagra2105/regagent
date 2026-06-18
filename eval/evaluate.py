@@ -32,6 +32,16 @@ def _rank_of(expected: set[str], ranked_sources: list[str]) -> int | None:
     return None
 
 
+def _regulation_of(expected: set[str]) -> str:
+    """Which regulation a golden item belongs to, from its expected label."""
+    joined = " ".join(expected)
+    if "DORA" in joined:
+        return "DORA"
+    if "GDPR" in joined:
+        return "GDPR"
+    return "EU AI Act"
+
+
 def main() -> None:
     chunks = load_all()   # AI Act + DORA — evaluate across the full multi-reg corpus
     store = DocStore(); store.add(chunks)
@@ -43,6 +53,7 @@ def main() -> None:
     rr_sum = 0.0
     grounding_sum = 0.0
     rows = []
+    per_reg: dict[str, list[int]] = {}   # regulation -> [hits, total]
 
     for q, expected in GOLDEN:
         # retrieval-only ranking (hybrid + rerank), to measure recall/MRR
@@ -55,6 +66,10 @@ def main() -> None:
         rank = _rank_of(expected, ranked_sources)
         retr_hits += int(got)
         rr_sum += (1.0 / rank) if rank else 0.0
+
+        reg = _regulation_of(expected)
+        agg = per_reg.setdefault(reg, [0, 0])
+        agg[0] += int(got); agg[1] += 1
 
         # full agent — does the cited answer reference the right article?
         a = answer_question(store, q, customer="eval", graph=graph, bm25=bm25)
@@ -75,6 +90,8 @@ def main() -> None:
           f"MRR: {rr_sum/n:.3f}   "
           f"Citation recall: {cite_hits/n:.0%}   "
           f"Mean grounding: {grounding_sum/n:.2f}")
+    print("by regulation:  " + "   ".join(
+        f"{reg} {h}/{t} ({h/t:.0%})" for reg, (h, t) in sorted(per_reg.items())))
 
 
 if __name__ == "__main__":

@@ -4,3 +4,7 @@ agentcost @ git+https://github.com/Lagra2105/agentcost.git
 psycopg[binary]
 pgvector
 openai
+
+# optional: real cross-encoder reranking (REGAGENT_RERANK=cross-encoder).
+# heavy (pulls torch) — left out of the default/slim image; install on demand:
+#   pip install sentence-transformers

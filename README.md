@@ -49,6 +49,7 @@ to reproduce.
 ```
 # offline / deterministic (hash embeddings, no API key)
 Retrieval recall@4: 97%   MRR: 0.84   Citation recall: 97%   Grounding: 0.89
+by regulation:  EU AI Act 96%   DORA 100%   GDPR 100%
 ```
 
 The offline numbers use a toy hash-embedding so the suite runs without a key and
@@ -90,7 +91,8 @@ Config via env: `OPENAI_API_KEY`, `DATABASE_URL` (→ pgvector),
 - [x] Evaluation harness + cost/quality experiment
 - [x] FastAPI service, pgvector, Docker
 - [x] Multi-regulation corpus (EU AI Act + DORA + GDPR) with cross-regulation graph links
-- [ ] Full AI Act (113 articles); Neo4j-backed graph; cross-encoder reranker
+- [x] Pluggable reranker — lexical default, opt-in cross-encoder (`REGAGENT_RERANK=cross-encoder`)
+- [ ] Full AI Act (113 articles) via `data/ai_act.txt`; Neo4j-backed graph
 - [ ] Hosted demo + multi-tenant access
 
 ---

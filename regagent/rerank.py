@@ -2,16 +2,25 @@
 
 Hybrid fusion gives good recall (the right article is *somewhere* in the top-k).
 A reranker then re-scores each candidate against the question for precision, so
-the article the answer is actually built on sits at the top. In production this
-is a cross-encoder (e.g. Cohere Rerank / bge-reranker); here a lexical
-cross-scorer that needs no model — same interface, swap later.
+the article the answer is actually built on sits at the top.
+
+Two backends behind one interface:
+  - default: a lexical cross-scorer (no model, offline, deterministic) — keeps the
+    Docker image slim and the test suite hermetic.
+  - opt-in: a real cross-encoder (set REGAGENT_RERANK=cross-encoder and install
+    `sentence-transformers`). Falls back to lexical if the dependency is absent,
+    so enabling it never breaks a deployment that lacks the model.
 """
 from __future__ import annotations
 
+import os
 import re
 from collections import Counter
 
 from .store import Chunk
+
+_CE = None            # lazily-loaded CrossEncoder model
+_CE_UNAVAILABLE = False
 
 _STOP = set("the a an of to in for and or is are be on that this with as by it "
             "from at which such not no any may shall will".split())
@@ -45,16 +54,48 @@ def _relevance(question: str, chunk: Chunk) -> float:
     return round(score, 4)
 
 
+def _load_cross_encoder():
+    """Lazily load the cross-encoder; cache it; degrade to None if unavailable."""
+    global _CE, _CE_UNAVAILABLE
+    if _CE is not None or _CE_UNAVAILABLE:
+        return _CE
+    try:
+        from sentence_transformers import CrossEncoder
+        model = os.environ.get("REGAGENT_RERANK_MODEL",
+                               "cross-encoder/ms-marco-MiniLM-L-6-v2")
+        _CE = CrossEncoder(model)
+    except Exception:
+        _CE_UNAVAILABLE = True   # missing dep / model — fall back to lexical
+    return _CE
+
+
+def _rerank_cross_encoder(question, hits, top):
+    ce = _load_cross_encoder()
+    if ce is None:
+        return None
+    scores = ce.predict([[question, c.text] for c, _ in hits])
+    rescored = [(c, round(float(s), 4)) for (c, _), s in zip(hits, scores)]
+    rescored.sort(key=lambda x: -x[1])
+    return rescored[:top]
+
+
 def rerank(question: str, hits: list[tuple[Chunk, float]], top: int = 4
            ) -> list[tuple[Chunk, float]]:
-    """Re-score fused candidates by (prefix-aware) relevance; return best `top`.
+    """Re-score fused candidates and return the best `top`.
 
-    The incoming fusion score breaks ties so a strong dense+BM25 signal isn't lost
-    when two candidates score equally on lexical overlap. A real cross-encoder
-    (Cohere Rerank / bge-reranker) swaps in here behind the same interface.
+    With REGAGENT_RERANK=cross-encoder (and sentence-transformers installed) a
+    real cross-encoder scores each (question, passage) pair. Otherwise a lexical
+    cross-scorer is used; the incoming fusion score breaks ties so a strong
+    dense+BM25 signal isn't lost when two candidates tie on lexical overlap.
     """
+    if not hits:
+        return []
+    if os.environ.get("REGAGENT_RERANK", "lexical") == "cross-encoder":
+        ce_ranked = _rerank_cross_encoder(question, hits, top)
+        if ce_ranked is not None:
+            return ce_ranked
     fused = [s for _, s in hits]
-    lo, hi = (min(fused), max(fused)) if fused else (0.0, 1.0)
+    lo, hi = min(fused), max(fused)
     span = (hi - lo) or 1.0
     rescored = [(c, round(_relevance(question, c) + 0.01 * (s - lo) / span, 4))
                 for c, s in hits]
