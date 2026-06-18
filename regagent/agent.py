@@ -25,6 +25,11 @@ from .provenance import score as score_provenance, ProvenanceReport
 
 SINK = SQLiteSink(os.environ.get("AGENTCOST_DB", "regagent.db"))
 ANSWER_MODEL = os.environ.get("REGAGENT_ANSWER_MODEL", "gpt-4o")  # tunable for experiments
+# Below this grounding score the agent abstains instead of answering — better a
+# safe "I don't know" than a confident hallucination in a compliance context.
+ABSTAIN_THRESHOLD = float(os.environ.get("REGAGENT_ABSTAIN_THRESHOLD", "0.30"))
+# Minimum top retrieval relevance to even attempt an answer (else abstain early).
+RETRIEVAL_MIN = float(os.environ.get("REGAGENT_RETRIEVAL_MIN", "0.4"))
 
 
 @dataclass
@@ -35,6 +40,7 @@ class Answer:
     graph_sources: list[str] = field(default_factory=list)  # graph-expanded provenance
     grounding: float = 0.0                                   # 0-1 how supported by sources
     provenance: ProvenanceReport | None = None
+    abstained: bool = False                                  # refused (low grounding)
     cost_usd: float = 0.0
 
 
@@ -87,6 +93,21 @@ def answer_question(store: DocStore, question: str, customer: str = "demo",
         sources = [c.source for c, _ in hits]
         by_source = {c.source: c.text for c, _ in hits}
 
+        # 2c) EARLY ABSTENTION — if no article is relevant enough, refuse BEFORE
+        #     paying for generation. Trust win (no hallucination) + cost win
+        #     (abstained runs skip the expensive answer step).
+        if not hits or hits[0][1] < RETRIEVAL_MIN:
+            run.mark_failure()
+            from .provenance import ProvenanceReport
+            empty = ProvenanceReport(0.0, 0, 0, [], [])
+            return Answer(
+                question=question,
+                answer="Out of scope — no relevant provision was found in the "
+                       "available regulation. I won't answer without grounding; "
+                       "please rephrase or consult qualified legal counsel.",
+                sources=[], graph_sources=[], grounding=0.0,
+                provenance=empty, abstained=True, cost_usd=run.total_cost)
+
         # 2b) GRAPH retrieval — expand to related articles via shared concepts
         #     (a tool call, no LLM cost — graph traversal is cheap vs the model)
         graph_sources: list[str] = []
@@ -121,12 +142,21 @@ def answer_question(store: DocStore, question: str, customer: str = "demo",
         #    A failed-grounding run is marked as a FAILURE so agentcost counts it
         #    as wasted spend (cost-per-trusted-answer, not cost-per-answer).
         report = score_provenance(text, by_source)
-        if report.grounding_score >= 0.35:
-            run.mark_success()
-        else:
+        grounded = report.grounding_score >= ABSTAIN_THRESHOLD
+
+        # 6) ABSTENTION — in compliance, an unsupported answer is worse than none.
+        #    If grounding is too weak, refuse rather than hallucinate.
+        abstained = False
+        if not grounded:
+            text = ("I can't answer this with confidence from the available "
+                    "provisions. The retrieved articles don't sufficiently cover "
+                    "this question — please consult qualified legal counsel.")
+            abstained = True
             run.mark_failure()
+        else:
+            run.mark_success()
         cost = run.total_cost
 
     return Answer(question=question, answer=text, sources=sources,
                   graph_sources=graph_sources, grounding=report.grounding_score,
-                  provenance=report, cost_usd=cost)
+                  provenance=report, abstained=abstained, cost_usd=cost)

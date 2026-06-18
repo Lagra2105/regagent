@@ -78,3 +78,18 @@ def test_agent_end_to_end_tracks_cost(tmp_path):
     n = sqlite3.connect(os.environ["AGENTCOST_DB"]).execute(
         "SELECT COUNT(*) FROM runs").fetchone()[0]
     assert n == 1
+
+
+def test_abstention_on_out_of_scope(tmp_path):
+    import os, importlib
+    os.environ["AGENTCOST_DB"] = str(tmp_path / "ab.db")
+    import regagent.agent as ag
+    importlib.reload(ag)
+    chunks, store, bm25, graph = _corpus()
+    # in-scope: answers
+    on = ag.answer_question(store, "Is social scoring allowed?", graph=graph, bm25=bm25)
+    assert not on.abstained and on.sources
+    # out-of-scope: abstains, and costs far less (skips the answer model)
+    off = ag.answer_question(store, "What is the best recipe for cake?", graph=graph, bm25=bm25)
+    assert off.abstained and off.sources == []
+    assert off.cost_usd < on.cost_usd
