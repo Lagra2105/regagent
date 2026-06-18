@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
-from regagent.ingest import load_corpus, load_dora
+from regagent.ingest import load_corpus, load_dora, load_gdpr
 from regagent.store import DocStore
 from regagent.sparse import BM25Index
 from regagent.graph import KnowledgeGraph
@@ -25,7 +25,7 @@ app = FastAPI(title="RegAgent", version="0.1.0")
 
 # Build the knowledge base once. Use pgvector if DATABASE_URL is set (scales,
 # survives restarts), otherwise the in-memory store (zero-setup dev).
-_chunks = load_corpus("data/ai_act.txt") + load_dora()   # multi-regulation corpus
+_chunks = load_corpus("data/ai_act.txt") + load_dora() + load_gdpr()  # multi-regulation corpus
 if os.environ.get("DATABASE_URL"):
     from regagent.store_pg import PgVectorStore
     _store = PgVectorStore(os.environ["DATABASE_URL"])
@@ -109,7 +109,7 @@ def home() -> str:
  a{color:var(--brand)}
 </style>
 <h1>🛡️ RegAgent</h1>
-<div class=sub>A compliance agent for EU regulation — <b>EU AI Act</b> &amp; <b>DORA</b>. Every answer is grounded in the exact articles, scored for how well it's supported, and refused when the regulation doesn't cover it — because in compliance a confident wrong answer is worse than none.</div>
+<div class=sub>A compliance agent for EU regulation — <b>EU AI Act</b>, <b>DORA</b> &amp; <b>GDPR</b>. Every answer is grounded in the exact articles, scored for how well it's supported, and refused when the regulation doesn't cover it — because in compliance a confident wrong answer is worse than none.</div>
 <div class=pills>
  <span class=pill>hybrid retrieval</span><span class=pill>knowledge graph</span><span class=pill>provenance</span><span class=pill>abstention</span><span class=pill>cost-tracked</span>
 </div>
@@ -125,6 +125,7 @@ const EXAMPLES=[
  "What are the transparency obligations when users interact with an AI system?",
  "What must providers of high-risk AI systems do for risk management?",
  "When must a major ICT incident be reported under DORA?",  // second regulation
+ "Can a decision about me be made by an algorithm alone under GDPR?",  // third regulation
  "What is the best recipe for a chocolate cake?"  // out-of-scope: watch it abstain
 ];
 const exwrap=document.getElementById('ex');

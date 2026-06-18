@@ -27,6 +27,10 @@ CONCEPTS = [
     # different regulations — e.g. incident reporting appears in both.
     "incident", "third-party", "resilience", "testing", "continuity",
     "detection", "governance", "oversight", "ict",
+    # GDPR concepts — several bridge to the AI Act (automated decision-making,
+    # impact assessment, biometric) and to DORA (security, breach/notification).
+    "personal data", "data protection", "consent", "profiling", "automated",
+    "data subject", "breach", "erasure", "encryption", "impact assessment",
 ]
 
 

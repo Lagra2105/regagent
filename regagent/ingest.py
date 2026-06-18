@@ -277,6 +277,97 @@ DORA = [
 ]
 
 
+# GDPR — Regulation (EU) 2016/679, General Data Protection Regulation. Abridged
+# key provisions. The most recognised EU regulation, and rich in cross-links:
+# automated decision-making (Art 22) ↔ AI Act; data protection impact assessment
+# (Art 35) ↔ AI Act fundamental-rights assessment; breach notification (Art 33)
+# ↔ DORA incident reporting; biometric data (Art 9) ↔ AI Act biometrics.
+GDPR = [
+    ("GDPR — Article 5 (Principles of processing)",
+     "Personal data shall be processed lawfully, fairly and in a transparent manner; "
+     "collected for specified, explicit and legitimate purposes (purpose limitation); "
+     "adequate, relevant and limited to what is necessary (data minimisation); "
+     "accurate; kept no longer than necessary; and processed securely. The controller "
+     "is responsible for, and must be able to demonstrate, compliance (accountability)."),
+    ("GDPR — Article 6 (Lawfulness of processing)",
+     "Processing is lawful only if and to the extent that at least one applies: the "
+     "data subject has given consent; processing is necessary for the performance of a "
+     "contract; for compliance with a legal obligation; to protect vital interests; "
+     "for a task carried out in the public interest; or for the legitimate interests "
+     "pursued by the controller, except where overridden by the data subject's rights."),
+    ("GDPR — Article 7 (Conditions for consent)",
+     "Where processing is based on consent, the controller shall be able to demonstrate "
+     "that the data subject has consented. The request for consent shall be presented "
+     "in a clearly distinguishable, intelligible and easily accessible form. The data "
+     "subject has the right to withdraw consent at any time."),
+    ("GDPR — Article 9 (Special categories of data)",
+     "Processing of personal data revealing racial or ethnic origin, political "
+     "opinions, religious beliefs, trade-union membership, genetic data, biometric "
+     "data for uniquely identifying a person, data concerning health, or data "
+     "concerning sex life or sexual orientation is prohibited, unless one of the "
+     "listed exceptions, such as explicit consent, applies."),
+    ("GDPR — Article 15 (Right of access)",
+     "The data subject has the right to obtain from the controller confirmation as to "
+     "whether personal data concerning them are being processed, access to that data, "
+     "and information about the purposes, the categories of data, the recipients, the "
+     "envisaged retention period, and the existence of automated decision-making."),
+    ("GDPR — Article 17 (Right to erasure)",
+     "The data subject has the right to obtain the erasure of personal data without "
+     "undue delay where the data are no longer necessary, consent is withdrawn and "
+     "there is no other legal ground, the data subject objects, or the data were "
+     "unlawfully processed — the 'right to be forgotten'."),
+    ("GDPR — Article 22 (Automated individual decision-making)",
+     "The data subject has the right not to be subject to a decision based solely on "
+     "automated processing, including profiling, which produces legal effects "
+     "concerning them or similarly significantly affects them, save where it is "
+     "necessary for a contract, authorised by law, or based on explicit consent, with "
+     "suitable safeguards including the right to human intervention."),
+    ("GDPR — Article 25 (Data protection by design and by default)",
+     "The controller shall implement appropriate technical and organisational measures, "
+     "such as pseudonymisation and data minimisation, both at the time of determining "
+     "the means of processing and at the time of the processing itself, and ensure that "
+     "by default only personal data necessary for each specific purpose are processed."),
+    ("GDPR — Article 30 (Records of processing activities)",
+     "Each controller shall maintain a record of processing activities under its "
+     "responsibility, containing the purposes of processing, a description of the "
+     "categories of data subjects and personal data, the categories of recipients, "
+     "transfers to third countries, time limits for erasure, and a general description "
+     "of the technical and organisational security measures."),
+    ("GDPR — Article 32 (Security of processing)",
+     "The controller and processor shall implement appropriate technical and "
+     "organisational measures to ensure a level of security appropriate to the risk, "
+     "including pseudonymisation and encryption of personal data, and the ability to "
+     "ensure the ongoing confidentiality, integrity, availability and resilience of "
+     "processing systems and services."),
+    ("GDPR — Article 33 (Breach notification to authority)",
+     "In the case of a personal data breach, the controller shall notify the competent "
+     "supervisory authority without undue delay and, where feasible, not later than 72 "
+     "hours after having become aware of it, unless the breach is unlikely to result in "
+     "a risk to the rights and freedoms of natural persons."),
+    ("GDPR — Article 34 (Breach communication to data subject)",
+     "When a personal data breach is likely to result in a high risk to the rights and "
+     "freedoms of natural persons, the controller shall communicate the breach to the "
+     "data subject without undue delay, in clear and plain language describing the "
+     "nature of the breach and the measures taken."),
+    ("GDPR — Article 35 (Data protection impact assessment)",
+     "Where a type of processing, in particular using new technologies, is likely to "
+     "result in a high risk to the rights and freedoms of natural persons, the "
+     "controller shall, prior to the processing, carry out a data protection impact "
+     "assessment of the envisaged processing operations on the protection of personal "
+     "data."),
+    ("GDPR — Article 37 (Data protection officer)",
+     "The controller and the processor shall designate a data protection officer where "
+     "the processing is carried out by a public authority, where the core activities "
+     "require regular and systematic monitoring of data subjects on a large scale, or "
+     "where they consist of large-scale processing of special categories of data."),
+    ("GDPR — Article 83 (Administrative fines)",
+     "Infringements of the basic principles for processing, including consent, and of "
+     "the data subjects' rights shall be subject to administrative fines up to 20 000 "
+     "000 EUR, or in the case of an undertaking up to 4 % of the total worldwide annual "
+     "turnover of the preceding financial year, whichever is higher."),
+]
+
+
 def _chunk_text(text: str, source: str, regulation: str = "",
                 max_chars: int = 800) -> list[Chunk]:
     parts, buf = [], ""
@@ -308,9 +399,14 @@ def load_dora() -> list[Chunk]:
     return _load(DORA, "DORA")
 
 
+def load_gdpr() -> list[Chunk]:
+    """The built-in GDPR corpus."""
+    return _load(GDPR, "GDPR")
+
+
 def load_all() -> list[Chunk]:
     """All built-in regulations — multi-regulation corpus for the demo."""
-    return load_sample() + load_dora()
+    return load_sample() + load_dora() + load_gdpr()
 
 
 def load_corpus(path: str, regulation: str = "EU AI Act") -> list[Chunk]:

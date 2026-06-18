@@ -72,4 +72,17 @@ GOLDEN = [
      {"DORA — Article 30"}),
     ("How often must financial entities test digital operational resilience?",
      {"DORA — Article 24"}),
+    # --- GDPR (General Data Protection Regulation) ---
+    ("Can a decision about someone be based solely on automated processing under GDPR?",
+     {"GDPR — Article 22"}),
+    ("When must a personal data breach be reported under GDPR?",
+     {"GDPR — Article 33"}),
+    ("When is a data protection impact assessment required under GDPR?",
+     {"GDPR — Article 35"}),
+    ("What are the lawful bases for processing personal data?",
+     {"GDPR — Article 6"}),
+    ("Does a data subject have the right to be forgotten?",
+     {"GDPR — Article 17"}),
+    ("Is processing of biometric data restricted under GDPR?",
+     {"GDPR — Article 9"}),
 ]

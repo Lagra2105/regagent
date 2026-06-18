@@ -1,7 +1,7 @@
 # RegAgent 🛡️
 
-**A multi-regulation compliance GraphRAG agent for EU law (EU AI Act + DORA) —
-with provenance, abstention, and measurable accuracy.**
+**A multi-regulation compliance GraphRAG agent for EU law (EU AI Act + DORA +
+GDPR) — with provenance, abstention, and measurable accuracy.**
 
 Ask *"does X comply?"* and get an answer grounded in the exact articles, a
 confidence score, and — when the regulation doesn't cover it — an honest refusal
@@ -42,13 +42,13 @@ question
 
 ## Benchmark
 
-A golden set of 32 compliance questions (EU AI Act + DORA), each tied to the
-article(s) that should ground a correct answer. Run `python -m eval.evaluate` to
-reproduce.
+A golden set of 38 compliance questions (EU AI Act + DORA + GDPR), each tied to
+the article(s) that should ground a correct answer. Run `python -m eval.evaluate`
+to reproduce.
 
 ```
 # offline / deterministic (hash embeddings, no API key)
-Retrieval recall@4: 94%   MRR: 0.83   Citation recall: 94%   Grounding: 0.89
+Retrieval recall@4: 97%   MRR: 0.84   Citation recall: 97%   Grounding: 0.89
 ```
 
 The offline numbers use a toy hash-embedding so the suite runs without a key and
@@ -77,8 +77,8 @@ Config via env: `OPENAI_API_KEY`, `DATABASE_URL` (→ pgvector),
 
 - **Storage**: in-memory for dev; **pgvector** (Postgres) via `DATABASE_URL` for
   scale and persistence — one component is both database and vector store.
-- **Corpus**: 36 key EU AI Act articles + 15 DORA articles built in; drop the
-  full text into `data/ai_act.txt` (all 113) or add another regulation via
+- **Corpus**: 36 EU AI Act + 15 DORA + 15 GDPR articles built in; drop the full
+  text into `data/ai_act.txt` (all 113) or add another regulation via
   `load_corpus(path, regulation=...)` — no code change.
 - **Deploy**: Dockerfile included; runs on Railway / Render with a Postgres add-on.
 
@@ -89,8 +89,8 @@ Config via env: `OPENAI_API_KEY`, `DATABASE_URL` (→ pgvector),
 - [x] Provenance scoring (lexical + semantic) + abstention
 - [x] Evaluation harness + cost/quality experiment
 - [x] FastAPI service, pgvector, Docker
-- [x] Multi-regulation corpus (EU AI Act + DORA) with cross-regulation graph links
-- [ ] Full AI Act (113 articles) + more regulations (GDPR); Neo4j-backed graph; cross-encoder reranker
+- [x] Multi-regulation corpus (EU AI Act + DORA + GDPR) with cross-regulation graph links
+- [ ] Full AI Act (113 articles); Neo4j-backed graph; cross-encoder reranker
 - [ ] Hosted demo + multi-tenant access
 
 ---
