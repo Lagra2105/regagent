@@ -32,7 +32,10 @@ CONCEPTS = [
 
 def _concepts_in(text: str) -> set[str]:
     t = text.lower()
-    found = {c for c in CONCEPTS if c in t}
+    # word-boundary match so short tokens like "ict" don't spuriously hit
+    # "predictions"/"victims" — false graph edges are unacceptable when
+    # provenance is the product.
+    found = {c for c in CONCEPTS if re.search(r"\b" + re.escape(c) + r"\b", t)}
     # a couple of stem variants
     if re.search(r"\btrain", t):
         found.add("training data")
