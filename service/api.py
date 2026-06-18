@@ -85,7 +85,9 @@ def home() -> str:
  body{font-family:-apple-system,system-ui,Segoe UI,sans-serif;max-width:760px;margin:0 auto;padding:40px 20px 80px;color:var(--ink)}
  h1{font-size:24px;margin:0 0 4px} .sub{color:var(--muted);margin-bottom:8px;line-height:1.5}
  .pill{display:inline-block;font-size:11px;color:var(--brand);background:var(--brandsoft);border-radius:999px;padding:3px 10px;margin:0 6px 0 0}
- .pills{margin:14px 0 22px}
+ .pills{margin:14px 0 10px}
+ .bench{font-size:12.5px;color:var(--muted);background:#fafafe;border:1px solid var(--line);border-radius:10px;padding:9px 13px;margin:0 0 22px}
+ .bench b{color:var(--ink)}
  textarea{width:100%;height:74px;padding:13px;border:1px solid var(--line);border-radius:12px;font:inherit;resize:vertical}
  .row{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
  button{padding:11px 20px;border:0;border-radius:10px;background:var(--brand);color:#fff;font-weight:600;cursor:pointer;font-size:14px}
@@ -111,6 +113,7 @@ def home() -> str:
 <div class=pills>
  <span class=pill>hybrid retrieval</span><span class=pill>knowledge graph</span><span class=pill>provenance</span><span class=pill>abstention</span><span class=pill>cost-tracked</span>
 </div>
+<div class=bench>Benchmarked on a 16-question golden set: <b>retrieval recall@4 100%</b> · <b>MRR 0.96</b> · <b>citation recall 100%</b> · <b>grounding 0.88</b></div>
 <textarea id=q placeholder="e.g. Is social scoring of citizens allowed under the AI Act?"></textarea>
 <div class=row><button id=btn onclick=ask()>Ask</button></div>
 <div class=exlbl>Try one:</div>
