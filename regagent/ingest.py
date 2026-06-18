@@ -107,6 +107,89 @@ SAMPLE = [
      "administrative fines of up to 35 000 000 EUR or up to 7 % of total worldwide "
      "annual turnover, whichever is higher. Other infringements may incur fines up "
      "to 15 000 000 EUR or 3 % of turnover."),
+    ("AI Act — Article 2 (Scope)",
+     "This Regulation applies to providers placing on the market or putting into "
+     "service AI systems in the Union irrespective of where they are established, "
+     "and to deployers located in the Union. It does not apply to systems used "
+     "exclusively for military, defence or national security purposes, to scientific "
+     "research and development, or to purely personal non-professional activity."),
+    ("AI Act — Article 4 (AI literacy)",
+     "Providers and deployers of AI systems shall take measures to ensure, to their "
+     "best extent, a sufficient level of AI literacy of their staff and other persons "
+     "dealing with the operation and use of AI systems on their behalf, taking into "
+     "account their technical knowledge, experience, education and the context of use."),
+    ("AI Act — Article 17 (Quality management system)",
+     "Providers of high-risk AI systems shall put in place a quality management "
+     "system that ensures compliance with this Regulation, documented in written "
+     "policies, procedures and instructions, covering a strategy for regulatory "
+     "compliance, design and testing procedures, data management, and the "
+     "post-market monitoring system."),
+    ("AI Act — Article 18 (Documentation keeping)",
+     "Providers shall, for a period ending 10 years after the high-risk AI system "
+     "has been placed on the market or put into service, keep at the disposal of the "
+     "national competent authorities the technical documentation, the quality "
+     "management system documentation, and the EU declaration of conformity."),
+    ("AI Act — Article 19 (Automatically generated logs)",
+     "Providers of high-risk AI systems shall keep the logs automatically generated "
+     "by their systems, to the extent such logs are under their control, for a period "
+     "appropriate to the intended purpose, of at least six months unless provided "
+     "otherwise by applicable Union or national law."),
+    ("AI Act — Article 20 (Corrective actions and duty of information)",
+     "Providers who consider or have reason to consider that a high-risk AI system "
+     "they have placed on the market is not in conformity shall immediately take the "
+     "necessary corrective actions to bring it into conformity, withdraw it, disable "
+     "it or recall it, and inform distributors, deployers and the relevant authorities."),
+    ("AI Act — Article 23 (Obligations of importers)",
+     "Before placing a high-risk AI system on the market, importers shall verify that "
+     "the conformity assessment procedure has been carried out, that the technical "
+     "documentation has been drawn up, that the system bears the CE marking and is "
+     "accompanied by the EU declaration of conformity and instructions for use."),
+    ("AI Act — Article 24 (Obligations of distributors)",
+     "Before making a high-risk AI system available, distributors shall verify that "
+     "it bears the CE marking, is accompanied by the EU declaration of conformity and "
+     "instructions for use, and that the provider and importer have complied with "
+     "their obligations; they shall not make it available if it is not in conformity."),
+    ("AI Act — Article 25 (Responsibilities along the AI value chain)",
+     "A distributor, importer, deployer or other third party shall be considered a "
+     "provider of a high-risk AI system, and assume the provider's obligations, where "
+     "they put their name or trademark on it, make a substantial modification, or "
+     "modify the intended purpose of a system in a way that makes it high-risk."),
+    ("AI Act — Article 27 (Fundamental rights impact assessment)",
+     "Prior to deploying certain high-risk AI systems, deployers that are bodies "
+     "governed by public law or private operators providing public services shall "
+     "perform an assessment of the impact on fundamental rights that the use may "
+     "produce, describing the processes, the period and frequency of use, the "
+     "categories of persons affected, and the human oversight measures."),
+    ("AI Act — Article 43 (Conformity assessment)",
+     "High-risk AI systems shall undergo the relevant conformity assessment "
+     "procedure before being placed on the market — either based on internal control "
+     "(Annex VI) or involving a notified body (Annex VII) — and a new assessment is "
+     "required whenever the system is substantially modified."),
+    ("AI Act — Article 47 (EU declaration of conformity)",
+     "The provider shall draw up a written, machine-readable EU declaration of "
+     "conformity for each high-risk AI system, keep it up to date, state that the "
+     "system meets the requirements of this Regulation, and keep it at the disposal "
+     "of the national competent authorities for 10 years."),
+    ("AI Act — Article 48 (CE marking)",
+     "High-risk AI systems shall bear the CE marking to indicate their conformity "
+     "with this Regulation. For digital systems, a digital CE marking shall be used "
+     "where it can be easily accessed. The CE marking is affixed visibly, legibly "
+     "and indelibly before the system is placed on the market."),
+    ("AI Act — Article 49 (Registration)",
+     "Before placing on the market or putting into service a high-risk AI system "
+     "listed in Annex III, the provider and, where applicable, the deployer shall "
+     "register themselves and their system in the EU database referred to in "
+     "Article 71."),
+    ("AI Act — Article 73 (Reporting of serious incidents)",
+     "Providers of high-risk AI systems placed on the Union market shall report any "
+     "serious incident to the market surveillance authorities of the Member States "
+     "where it occurred, immediately after establishing a causal link, and in any "
+     "event no later than 15 days after becoming aware of it."),
+    ("AI Act — Article 113 (Application dates)",
+     "This Regulation entered into force on 1 August 2024 and applies from 2 August "
+     "2026, with staggered dates: the prohibitions in Article 5 and AI literacy "
+     "obligations apply from 2 February 2025; obligations for general-purpose AI "
+     "models from 2 August 2025; and certain high-risk obligations from 2 August 2027."),
 ]
 
 

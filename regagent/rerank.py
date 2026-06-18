@@ -22,23 +22,41 @@ def _terms(text: str) -> Counter:
                    if w not in _STOP)
 
 
+def _matches(qt: str, d: Counter) -> int:
+    """Count occurrences of a query term in a doc, with prefix matching so
+    'interact' also hits 'interacting' and 'oblig' hits 'obligations'."""
+    if qt in d:
+        return d[qt]
+    stem = qt[:5]
+    return sum(n for w, n in d.items() if w.startswith(stem) or qt.startswith(w[:5]))
+
+
 def _relevance(question: str, chunk: Chunk) -> float:
-    """Cross-score: weighted term overlap of question against chunk text+source."""
+    """Cross-score: weighted (prefix-aware) term overlap of question vs chunk."""
     q = _terms(question)
     if not q:
         return 0.0
     d = _terms(chunk.text + " " + chunk.source)
-    overlap = sum(min(q[t], d[t]) for t in q if t in d)
-    # normalise by question length; reward exact source/article hits
-    score = overlap / sum(q.values())
-    if any(t in chunk.source.lower() for t in q):
+    overlap = sum(min(q[t], _matches(t, d)) for t in q)
+    score = overlap / sum(q.values())                  # normalise by question length
+    src_terms = _terms(chunk.source)                   # word-level, not substring
+    if q.keys() & src_terms:                            # reward exact article/source hit
         score += 0.25
     return round(score, 4)
 
 
 def rerank(question: str, hits: list[tuple[Chunk, float]], top: int = 4
            ) -> list[tuple[Chunk, float]]:
-    """Re-score fused candidates by relevance to the question; return best `top`."""
-    rescored = [(c, _relevance(question, c)) for c, _ in hits]
+    """Re-score fused candidates by (prefix-aware) relevance; return best `top`.
+
+    The incoming fusion score breaks ties so a strong dense+BM25 signal isn't lost
+    when two candidates score equally on lexical overlap. A real cross-encoder
+    (Cohere Rerank / bge-reranker) swaps in here behind the same interface.
+    """
+    fused = [s for _, s in hits]
+    lo, hi = (min(fused), max(fused)) if fused else (0.0, 1.0)
+    span = (hi - lo) or 1.0
+    rescored = [(c, round(_relevance(question, c) + 0.01 * (s - lo) / span, 4))
+                for c, s in hits]
     rescored.sort(key=lambda x: -x[1])
     return rescored[:top]

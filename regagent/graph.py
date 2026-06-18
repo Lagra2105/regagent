@@ -18,8 +18,11 @@ from .store import Chunk
 # Regulatory concepts that connect provisions. Extend as the corpus grows.
 CONCEPTS = [
     "prohibited", "high-risk", "risk management", "transparency", "training data",
-    "social scoring", "subliminal", "conformity assessment", "provider",
-    "biometric", "interact", "harm", "lifecycle", "bias",
+    "social scoring", "subliminal", "conformity", "provider", "deployer",
+    "biometric", "interact", "harm", "lifecycle", "bias", "importer",
+    "distributor", "documentation", "logs", "ce marking", "declaration of conformity",
+    "registration", "serious incident", "fundamental rights", "quality management",
+    "value chain", "corrective", "literacy",
 ]
 
 

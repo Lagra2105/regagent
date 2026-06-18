@@ -36,11 +36,21 @@ question
  → agentcost     (cost per step, success = grounded)
 ```
 
-## Benchmark (16-question golden set)
+## Benchmark
+
+A golden set of 26 compliance questions, each tied to the article(s) that should
+ground a correct answer. Run `python -m eval.evaluate` to reproduce.
 
 ```
-Retrieval recall@4: 100%   MRR: 0.96   Citation recall: 100%   Grounding: 0.88
+# offline / deterministic (hash embeddings, no API key)
+Retrieval recall@4: 92%   MRR: 0.82   Citation recall: 92%   Grounding: 0.88
 ```
+
+The offline numbers use a toy hash-embedding so the suite runs without a key and
+is fully reproducible. With production embeddings (`OPENAI_API_KEY` →
+`text-embedding-3-small`) retrieval is materially higher — the remaining offline
+misses are semantic-disambiguation cases (e.g. *provider obligations* Art 16 vs
+the specific obligation articles) that real embeddings resolve.
 
 ## Quickstart
 
