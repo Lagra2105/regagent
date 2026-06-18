@@ -24,6 +24,7 @@ from .graph import KnowledgeGraph
 from .provenance import score as score_provenance, ProvenanceReport
 
 SINK = SQLiteSink(os.environ.get("AGENTCOST_DB", "regagent.db"))
+ANSWER_MODEL = os.environ.get("REGAGENT_ANSWER_MODEL", "gpt-4o")  # tunable for experiments
 
 
 @dataclass
@@ -107,7 +108,7 @@ def answer_question(store: DocStore, question: str, customer: str = "demo",
              "excerpts don't cover it, say so."},
             {"role": "user", "content": f"Question: {question}\n\nExcerpts:\n{context}"},
         ]
-        text, a = _llm(msg, model="gpt-4o")
+        text, a = _llm(msg, model=ANSWER_MODEL)
         run.record_response(a, step="answer")
 
         # 4) verify the answer is grounded (self-check)
