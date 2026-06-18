@@ -6,14 +6,16 @@ Run:  python demo.py            (mock mode, no API key needed)
 """
 from regagent.store import DocStore
 from regagent.ingest import load_sample
+from regagent.sparse import BM25Index
 from regagent.graph import KnowledgeGraph
 from regagent.agent import answer_question
 
 chunks = load_sample()
 store = DocStore()
 store.add(chunks)
+bm25 = BM25Index().build(chunks)
 graph = KnowledgeGraph().build(chunks)
-print(f"Corpus: {len(store.chunks)} chunks · graph: {len(graph.node_concepts)} nodes\n")
+print(f"Corpus: {len(store.chunks)} chunks · hybrid: dense+BM25 · graph: {len(graph.node_concepts)} nodes\n")
 
 questions = [
     "Is an AI system that scores citizens by social behaviour allowed?",
@@ -22,7 +24,7 @@ questions = [
 ]
 
 for q in questions:
-    a = answer_question(store, q, customer="acme-bank", graph=graph)
+    a = answer_question(store, q, customer="acme-bank", graph=graph, bm25=bm25)
     print("Q:", q)
     print("A:", a.answer)
     print("Dense sources:", ", ".join(a.sources))

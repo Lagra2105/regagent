@@ -17,6 +17,8 @@ from dataclasses import dataclass, field
 from agentcost import track, SQLiteSink
 
 from .store import DocStore, Chunk
+from .sparse import BM25Index
+from .fusion import rrf
 from .graph import KnowledgeGraph
 from .provenance import score as score_provenance, ProvenanceReport
 
@@ -62,7 +64,8 @@ def _route(question: str) -> tuple[str, dict]:
 
 
 def answer_question(store: DocStore, question: str, customer: str = "demo",
-                    graph: KnowledgeGraph | None = None) -> Answer:
+                    graph: KnowledgeGraph | None = None,
+                    bm25: BM25Index | None = None) -> Answer:
     """Run the multi-step agent on one question, tracked end-to-end by agentcost."""
     with track("reg-answer", customer=customer, feature="compliance-qa",
                budget_usd=0.50, sink=SINK) as run:
@@ -70,8 +73,13 @@ def answer_question(store: DocStore, question: str, customer: str = "demo",
         _, r = _route(question)
         run.record_response(r, step="classify")
 
-        # 2) dense retrieval (provenance captured here)
-        hits = store.search(question, k=4)
+        # 2) HYBRID retrieval: dense (meaning) + sparse (exact terms), fused by RRF
+        dense = store.search(question, k=5)
+        if bm25 is not None:
+            sparse = bm25.search(question, k=5)
+            hits = rrf(dense, sparse, top=4)
+        else:
+            hits = dense
         sources = [c.source for c, _ in hits]
         by_source = {c.source: c.text for c, _ in hits}
 
