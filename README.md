@@ -1,37 +1,83 @@
-# RegAgent
+# RegAgent 🛡️
 
-A regulatory-compliance **GraphRAG agent with provenance** — answers
-"does X comply with the EU AI Act?" and **cites the exact articles** it used.
+**A compliance GraphRAG agent for the EU AI Act — with provenance, abstention,
+and measurable accuracy.**
 
-Built as a real, sellable agent *and* as the first live case study for
-[agentcost](https://github.com/Lagra2105/agentcost): every step of every run
-is tracked, so the agent's real economics (cost per step, per customer) land
-on the agentcost dashboard. Dogfooding the tooling on a real product.
+Ask *"does X comply with the AI Act?"* and get an answer grounded in the exact
+articles, a confidence score, and — when the regulation doesn't cover it — an
+honest refusal instead of a hallucination. In compliance, a wrong answer is
+worse than none.
 
-## Why provenance
-In compliance you can't hallucinate. RegAgent answers **only** from retrieved
-regulation text and returns the source articles — so a human can verify. That
-trust requirement is exactly where generic chatbots can't compete.
+## Why it's different
 
-## Architecture (Phase 1)
-1. **Ingest** — regulation text → citeable chunks (`ingest.py`)
-2. **Agent** (multi-step, wrapped in `agentcost.track`):
-   - `classify` → route the question
-   - `retrieve` → dense vector search (provenance captured)
-   - `answer` → grounded answer with article citations
-   - `verify` → self-check against sources
+Generic chatbots can't be trusted for compliance: they paraphrase, they invent,
+and you can't audit where an answer came from. RegAgent is built around **trust**:
 
-Runs offline in **mock mode** (no key); set `OPENAI_API_KEY` for real answers
-and embeddings.
+| Capability | What it does |
+|---|---|
+| **Hybrid retrieval** | dense (meaning) + BM25 (exact terms) fused with RRF, then reranked |
+| **Knowledge graph** | links articles by shared concepts; pulls in related provisions the vector search misses, and explains the link |
+| **Provenance** | every answer cites the articles it used; a grounding score (lexical *or* semantic) measures how supported it is |
+| **Abstention** | refuses out-of-scope / ungrounded questions — and skips the expensive answer step (≈18× cheaper) |
+| **Measured** | a golden benchmark reports retrieval recall@k, MRR, citation accuracy, grounding |
+| **Costed** | instrumented with [agentcost](https://github.com/Lagra2105/agentcost): real per-step economics, cost-per-*trusted*-answer |
 
-## Run
-```bash
-python demo.py
+## Pipeline
+
+```
+question
+ → classify
+ → dense + BM25  →  RRF fusion  →  rerank        (hybrid retrieval)
+ → abstain-gate  (refuse early if nothing relevant — trust + cost win)
+ → graph expand  (related articles via shared concepts)
+ → answer        (grounded, with article citations)
+ → verify
+ → provenance score  (lexical / semantic grounding)
+ → agentcost     (cost per step, success = grounded)
 ```
 
+## Benchmark (16-question golden set)
+
+```
+Retrieval recall@4: 100%   MRR: 0.96   Citation recall: 100%   Grounding: 0.88
+```
+
+## Quickstart
+
+```bash
+pip install -r requirements.txt
+python demo.py                            # mock mode, no key needed
+OPENAI_API_KEY=sk-... python demo.py      # real embeddings + answers
+
+python -m eval.evaluate        # accuracy metrics
+python -m eval.cost_quality    # cost-vs-quality model selection
+uvicorn service.api:app        # web UI + REST API at http://localhost:8000
+```
+
+Config via env: `OPENAI_API_KEY`, `DATABASE_URL` (→ pgvector),
+`REGAGENT_ANSWER_MODEL`, `REGAGENT_GROUNDING` (lexical|semantic),
+`REGAGENT_ABSTAIN_THRESHOLD`.
+
+## Architecture notes
+
+- **Storage**: in-memory for dev; **pgvector** (Postgres) via `DATABASE_URL` for
+  scale and persistence — one component is both database and vector store.
+- **Corpus**: 20 key AI Act articles built in; drop the full text into
+  `data/ai_act.txt` for all 113.
+- **Deploy**: Dockerfile included; runs on Railway / Render with a Postgres add-on.
+
 ## Roadmap
-- [ ] Full EU AI Act corpus (drop into data/ai_act.txt)
-- [ ] Knowledge-graph layer (Neo4j): articles, cross-references, definitions → graph retrieval
-- [ ] Hybrid fusion (dense + sparse + graph) with reranking
-- [ ] Provenance scoring (answer-to-source grounding)
-- [ ] Deploy as an API + UI
+
+- [x] Hybrid retrieval (dense + sparse + RRF + rerank)
+- [x] Knowledge graph layer + graph-expanded provenance
+- [x] Provenance scoring (lexical + semantic) + abstention
+- [x] Evaluation harness + cost/quality experiment
+- [x] FastAPI service, pgvector, Docker
+- [ ] Neo4j-backed graph; full AI Act + DORA corpora; cross-encoder reranker
+- [ ] Hosted demo + multi-tenant access
+
+---
+
+Built by a Senior Data Scientist / MLOps engineer. The agent is instrumented by
+**agentcost** — running it on my own tooling immediately surfaced (and fixed) a
+real bug in the cost tracker. That's the point: real agents, measured honestly.
