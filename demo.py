@@ -27,4 +27,7 @@ for q in questions:
     print("A:", a.answer)
     print("Dense sources:", ", ".join(a.sources))
     print("Graph-expanded:", ", ".join(a.graph_sources) or "—")
+    g = a.provenance
+    flag = "✅ grounded" if a.grounding >= 0.35 else "⚠️ weak grounding — review"
+    print(f"Grounding: {a.grounding}  ({g.grounded_claims}/{g.total_claims} claims supported)  {flag}")
     print(f"Cost: ${a.cost_usd:.5f}\n" + "-" * 72)

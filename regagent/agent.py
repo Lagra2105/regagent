@@ -18,6 +18,7 @@ from agentcost import track, SQLiteSink
 
 from .store import DocStore, Chunk
 from .graph import KnowledgeGraph
+from .provenance import score as score_provenance, ProvenanceReport
 
 SINK = SQLiteSink(os.environ.get("AGENTCOST_DB", "regagent.db"))
 
@@ -28,6 +29,8 @@ class Answer:
     answer: str
     sources: list[str] = field(default_factory=list)        # dense provenance
     graph_sources: list[str] = field(default_factory=list)  # graph-expanded provenance
+    grounding: float = 0.0                                   # 0-1 how supported by sources
+    provenance: ProvenanceReport | None = None
     cost_usd: float = 0.0
 
 
@@ -38,8 +41,16 @@ def _llm(messages: list[dict], model: str = "gpt-4o-mini") -> tuple[str, dict]:
         client = OpenAI()
         resp = client.chat.completions.create(model=model, messages=messages, temperature=0)
         return resp.choices[0].message.content, resp.model_dump()
-    # mock: echo a deterministic answer + fake usage so agentcost has data
-    text = "[mock] Based on the retrieved articles, this is likely regulated; see sources."
+    # mock: build a grounded answer by quoting the provided excerpts, so the
+    # provenance scorer has something real to check. Fake usage feeds agentcost.
+    user = next((m["content"] for m in messages if m["role"] == "user"), "")
+    if "Excerpts:" in user:
+        import re
+        body = user.split("Excerpts:", 1)[1]
+        sents = re.findall(r"[A-Z][^.]{30,}\.", body)
+        text = "[mock] " + " ".join(sents[:2]) if sents else "[mock] No relevant provision found."
+    else:
+        text = "retrieve"
     fake = {"model": model, "usage": {"prompt_tokens": 1200, "completion_tokens": 250}}
     return text, fake
 
@@ -94,8 +105,16 @@ def answer_question(store: DocStore, question: str, customer: str = "demo",
         _, v = _llm(vmsg, model="gpt-4o-mini")
         run.record_response(v, step="verify")
 
-        run.mark_success()
+        # 5) provenance scoring — how well is the answer grounded in the sources?
+        #    A failed-grounding run is marked as a FAILURE so agentcost counts it
+        #    as wasted spend (cost-per-trusted-answer, not cost-per-answer).
+        report = score_provenance(text, by_source)
+        if report.grounding_score >= 0.35:
+            run.mark_success()
+        else:
+            run.mark_failure()
         cost = run.total_cost
 
     return Answer(question=question, answer=text, sources=sources,
-                  graph_sources=graph_sources, cost_usd=cost)
+                  graph_sources=graph_sources, grounding=report.grounding_score,
+                  provenance=report, cost_usd=cost)
