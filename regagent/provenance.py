@@ -49,18 +49,50 @@ def _support(claim: str, source_text: str) -> float:
     return len(c & s) / len(c)
 
 
-def score(answer: str, sources: dict[str, str], threshold: float = 0.35
-          ) -> ProvenanceReport:
-    """sources: {source_label: source_text}. Returns a grounding report."""
-    claims = [c.strip() for c in re.split(r"(?<=[.])\s+", answer) if len(c.strip()) > 12]
-    checks: list[ClaimCheck] = []
+def _claims(answer: str) -> list[str]:
+    return [c.strip() for c in re.split(r"(?<=[.])\s+", answer) if len(c.strip()) > 12]
+
+
+def _checks_lexical(claims, sources, threshold) -> list[ClaimCheck]:
+    out = []
     for claim in claims:
         best_src, best = None, 0.0
         for label, text in sources.items():
             sup = _support(claim, text)
             if sup > best:
                 best, best_src = sup, label
-        checks.append(ClaimCheck(claim, best_src, round(best, 3), best >= threshold))
+        out.append(ClaimCheck(claim, best_src, round(best, 3), best >= threshold))
+    return out
+
+
+def _checks_semantic(claims, sources, threshold) -> list[ClaimCheck]:
+    """Embedding-based: a claim is grounded if it's semantically close to a
+    source — robust to paraphrase, where lexical overlap fails."""
+    from .store import embed, _cosine
+    labels = list(sources)
+    texts = [sources[l] for l in labels]
+    embs = embed(claims + texts)
+    claim_e, src_e = embs[:len(claims)], embs[len(claims):]
+    out = []
+    for claim, ce in zip(claims, claim_e):
+        best_src, best = None, -1.0
+        for label, se in zip(labels, src_e):
+            sim = _cosine(ce, se)
+            if sim > best:
+                best, best_src = sim, label
+        out.append(ClaimCheck(claim, best_src, round(best, 3), best >= threshold))
+    return out
+
+
+def score(answer: str, sources: dict[str, str], threshold: float = 0.35,
+          method: str = "lexical") -> ProvenanceReport:
+    """Grounding report. method='semantic' uses embeddings (paraphrase-robust);
+    'lexical' uses term overlap (fast, no embeddings)."""
+    claims = _claims(answer)
+    if method == "semantic" and claims and sources:
+        checks = _checks_semantic(claims, sources, threshold)
+    else:
+        checks = _checks_lexical(claims, sources, threshold)
 
     total = len(checks) or 1
     grounded = sum(1 for c in checks if c.grounded)

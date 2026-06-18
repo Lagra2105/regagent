@@ -30,6 +30,8 @@ ANSWER_MODEL = os.environ.get("REGAGENT_ANSWER_MODEL", "gpt-4o")  # tunable for 
 ABSTAIN_THRESHOLD = float(os.environ.get("REGAGENT_ABSTAIN_THRESHOLD", "0.30"))
 # Minimum top retrieval relevance to even attempt an answer (else abstain early).
 RETRIEVAL_MIN = float(os.environ.get("REGAGENT_RETRIEVAL_MIN", "0.4"))
+# 'semantic' (embedding-based, paraphrase-robust) or 'lexical' (term overlap).
+GROUNDING_METHOD = os.environ.get("REGAGENT_GROUNDING", "lexical")
 
 
 @dataclass
@@ -141,7 +143,7 @@ def answer_question(store: DocStore, question: str, customer: str = "demo",
         # 5) provenance scoring — how well is the answer grounded in the sources?
         #    A failed-grounding run is marked as a FAILURE so agentcost counts it
         #    as wasted spend (cost-per-trusted-answer, not cost-per-answer).
-        report = score_provenance(text, by_source)
+        report = score_provenance(text, by_source, method=GROUNDING_METHOD)
         grounded = report.grounding_score >= ABSTAIN_THRESHOLD
 
         # 6) ABSTENTION — in compliance, an unsupported answer is worse than none.
