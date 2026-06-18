@@ -46,14 +46,16 @@ def test_rerank_orders_by_relevance():
     q = "inform users they interact with an AI system"
     fused = rrf(store.search(q, 6), bm25.search(q, 6), top=6)
     ranked = rerank(q, fused, top=3)
-    assert "Article 52" in ranked[0][0].source   # transparency-to-users article on top
+    assert "Article 50" in ranked[0][0].source   # transparency-to-users article on top
 
 
 def test_graph_expands_related_articles():
     chunks, _, _, graph = _corpus()
-    rel = graph.expand(["AI Act — Article 9"])
+    # use the actual node label (now includes a title)
+    node = next(n for n in graph.node_concepts if "Article 9" in n)
+    rel = graph.expand([node])
     # Article 9 (risk mgmt, high-risk) should connect to other high-risk articles
-    assert any("Article" in node for node, _ in rel)
+    assert any("Article" in n for n, _ in rel)
 
 
 def test_provenance_scoring():
