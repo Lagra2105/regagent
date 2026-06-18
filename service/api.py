@@ -8,6 +8,8 @@ Run:  uvicorn service.api:app --reload --port 8000
 """
 from __future__ import annotations
 
+import os
+
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
@@ -20,9 +22,15 @@ from regagent.agent import answer_question
 
 app = FastAPI(title="RegAgent", version="0.1.0")
 
-# Build the knowledge base once.
+# Build the knowledge base once. Use pgvector if DATABASE_URL is set (scales,
+# survives restarts), otherwise the in-memory store (zero-setup dev).
 _chunks = load_corpus("data/ai_act.txt")     # falls back to built-in sample
-_store = DocStore(); _store.add(_chunks)
+if os.environ.get("DATABASE_URL"):
+    from regagent.store_pg import PgVectorStore
+    _store = PgVectorStore(os.environ["DATABASE_URL"])
+else:
+    _store = DocStore()
+_store.add(_chunks)
 _bm25 = BM25Index().build(_chunks)
 _graph = KnowledgeGraph().build(_chunks)
 
