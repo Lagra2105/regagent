@@ -368,6 +368,62 @@ GDPR = [
 ]
 
 
+# NIS2 — Directive (EU) 2022/2555, high common level of cybersecurity. Abridged
+# key provisions. Bridges all three other regulations: incident reporting (Art 23)
+# ↔ DORA Art 19 ↔ GDPR Art 33; supply-chain security (Art 21) ↔ DORA third-party
+# risk; governance accountability (Art 20) ↔ DORA Art 5.
+NIS2 = [
+    ("NIS2 — Article 1 (Subject matter)",
+     "This Directive lays down measures that aim to achieve a high common level of "
+     "cybersecurity across the Union, including obligations on cybersecurity "
+     "risk-management measures and reporting, to improve the functioning of the "
+     "internal market."),
+    ("NIS2 — Article 3 (Essential and important entities)",
+     "Entities are classified as essential or important depending on their sector, "
+     "type and size. Essential entities include large operators in sectors of high "
+     "criticality such as energy, transport, banking, health and digital "
+     "infrastructure; important entities cover other in-scope sectors, with lighter "
+     "supervision."),
+    ("NIS2 — Article 20 (Governance)",
+     "The management bodies of essential and important entities shall approve the "
+     "cybersecurity risk-management measures, oversee their implementation, and can "
+     "be held liable for infringements. Members of management bodies are required to "
+     "follow training to identify risks and assess cybersecurity practices."),
+    ("NIS2 — Article 21 (Cybersecurity risk-management measures)",
+     "Essential and important entities shall take appropriate technical, operational "
+     "and organisational measures to manage the risks posed to network and "
+     "information systems, including risk analysis and information system security "
+     "policies, incident handling, business continuity and backup, supply chain "
+     "security, secure acquisition and development, cryptography and encryption, "
+     "access control and multi-factor authentication, and basic cyber hygiene and "
+     "training."),
+    ("NIS2 — Article 23 (Reporting obligations)",
+     "Entities shall notify the CSIRT or competent authority of any significant "
+     "incident without undue delay: an early warning within 24 hours, an incident "
+     "notification within 72 hours, and a final report no later than one month after "
+     "the incident notification, describing the root cause and mitigation measures."),
+    ("NIS2 — Article 24 (Cybersecurity certification)",
+     "Member States may require essential and important entities to use particular "
+     "ICT products, services and processes that are certified under European "
+     "cybersecurity certification schemes to demonstrate compliance with specific "
+     "risk-management requirements."),
+    ("NIS2 — Article 26 (Jurisdiction and territoriality)",
+     "Entities are generally under the jurisdiction of the Member State in which they "
+     "are established; certain digital providers fall under the jurisdiction of the "
+     "Member State where they have their main establishment in the Union."),
+    ("NIS2 — Article 32 (Supervisory measures for essential entities)",
+     "Competent authorities may subject essential entities to on-site inspections, "
+     "targeted security audits, requests for information and evidence of "
+     "implementation of cybersecurity policies, both during operation and after an "
+     "incident."),
+    ("NIS2 — Article 34 (Administrative fines)",
+     "Essential entities may be subject to administrative fines of up to 10 000 000 "
+     "EUR or 2 % of the total worldwide annual turnover, whichever is higher; "
+     "important entities up to 7 000 000 EUR or 1.4 % of turnover, whichever is "
+     "higher."),
+]
+
+
 def _chunk_text(text: str, source: str, regulation: str = "",
                 max_chars: int = 800) -> list[Chunk]:
     parts, buf = [], ""
@@ -404,9 +460,14 @@ def load_gdpr() -> list[Chunk]:
     return _load(GDPR, "GDPR")
 
 
+def load_nis2() -> list[Chunk]:
+    """The built-in NIS2 corpus."""
+    return _load(NIS2, "NIS2")
+
+
 def load_all() -> list[Chunk]:
     """All built-in regulations — multi-regulation corpus for the demo."""
-    return load_sample() + load_dora() + load_gdpr()
+    return load_sample() + load_dora() + load_gdpr() + load_nis2()
 
 
 def load_corpus(path: str, regulation: str = "EU AI Act") -> list[Chunk]:

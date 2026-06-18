@@ -35,10 +35,9 @@ def _rank_of(expected: set[str], ranked_sources: list[str]) -> int | None:
 def _regulation_of(expected: set[str]) -> str:
     """Which regulation a golden item belongs to, from its expected label."""
     joined = " ".join(expected)
-    if "DORA" in joined:
-        return "DORA"
-    if "GDPR" in joined:
-        return "GDPR"
+    for reg in ("DORA", "GDPR", "NIS2"):
+        if reg in joined:
+            return reg
     return "EU AI Act"
 
 

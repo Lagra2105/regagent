@@ -85,4 +85,13 @@ GOLDEN = [
      {"GDPR — Article 17"}),
     ("Is processing of biometric data restricted under GDPR?",
      {"GDPR — Article 9"}),
+    # --- NIS2 (cybersecurity) ---
+    ("What are the incident reporting deadlines under NIS2?",
+     {"NIS2 — Article 23"}),
+    ("What cybersecurity risk-management measures does NIS2 require?",
+     {"NIS2 — Article 21"}),
+    ("Can management bodies be held liable for cybersecurity under NIS2?",
+     {"NIS2 — Article 20"}),
+    ("What are the fines for essential entities under NIS2?",
+     {"NIS2 — Article 34"}),
 ]

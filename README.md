@@ -1,7 +1,7 @@
 # RegAgent 🛡️
 
 **A multi-regulation compliance GraphRAG agent for EU law (EU AI Act + DORA +
-GDPR) — with provenance, abstention, and measurable accuracy.**
+GDPR + NIS2) — with provenance, abstention, and measurable accuracy.**
 
 Ask *"does X comply?"* and get an answer grounded in the exact articles, a
 confidence score, and — when the regulation doesn't cover it — an honest refusal
@@ -42,14 +42,14 @@ question
 
 ## Benchmark
 
-A golden set of 38 compliance questions (EU AI Act + DORA + GDPR), each tied to
-the article(s) that should ground a correct answer. Run `python -m eval.evaluate`
-to reproduce.
+A golden set of 42 compliance questions (EU AI Act + DORA + GDPR + NIS2), each
+tied to the article(s) that should ground a correct answer. Run
+`python -m eval.evaluate` to reproduce.
 
 ```
 # offline / deterministic (hash embeddings, no API key)
-Retrieval recall@4: 97%   MRR: 0.84   Citation recall: 97%   Grounding: 0.89
-by regulation:  EU AI Act 96%   DORA 100%   GDPR 100%
+Retrieval recall@4: 98%   MRR: 0.83   Citation recall: 98%   Grounding: 0.89
+by regulation:  EU AI Act 96%   DORA 100%   GDPR 100%   NIS2 100%
 ```
 
 The offline numbers use a toy hash-embedding so the suite runs without a key and
@@ -78,8 +78,8 @@ Config via env: `OPENAI_API_KEY`, `DATABASE_URL` (→ pgvector),
 
 - **Storage**: in-memory for dev; **pgvector** (Postgres) via `DATABASE_URL` for
   scale and persistence — one component is both database and vector store.
-- **Corpus**: 36 EU AI Act + 15 DORA + 15 GDPR articles built in; drop the full
-  text into `data/ai_act.txt` (all 113) or add another regulation via
+- **Corpus**: 36 EU AI Act + 15 DORA + 15 GDPR + 9 NIS2 articles built in; drop
+  the full text into `data/ai_act.txt` (all 113) or add another regulation via
   `load_corpus(path, regulation=...)` — no code change.
 - **Deploy**: Dockerfile included; runs on Railway / Render with a Postgres add-on.
 
@@ -90,7 +90,7 @@ Config via env: `OPENAI_API_KEY`, `DATABASE_URL` (→ pgvector),
 - [x] Provenance scoring (lexical + semantic) + abstention
 - [x] Evaluation harness + cost/quality experiment
 - [x] FastAPI service, pgvector, Docker
-- [x] Multi-regulation corpus (EU AI Act + DORA + GDPR) with cross-regulation graph links
+- [x] Multi-regulation corpus (EU AI Act + DORA + GDPR + NIS2) with cross-regulation graph links
 - [x] Pluggable reranker — lexical default, opt-in cross-encoder (`REGAGENT_RERANK=cross-encoder`)
 - [ ] Full AI Act (113 articles) via `data/ai_act.txt`; Neo4j-backed graph
 - [ ] Hosted demo + multi-tenant access

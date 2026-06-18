@@ -88,9 +88,9 @@ def test_multi_regulation_retrieval():
     fused = rrf(store.search(q, 6), bm25.search(q, 6), top=6)
     hits = rerank(q, fused, top=4)
     assert any("DORA — Article 19" in c.source for c, _ in hits)
-    # all three regulations are present in the corpus
+    # all four regulations are present in the corpus
     regs = {c.regulation for c in chunks}
-    assert {"EU AI Act", "DORA", "GDPR"} <= regs
+    assert {"EU AI Act", "DORA", "GDPR", "NIS2"} <= regs
 
 
 def test_graph_links_across_regulations():
@@ -103,6 +103,10 @@ def test_graph_links_across_regulations():
     gseed = next(n for n in graph.node_concepts if "GDPR — Article 9" in n)
     grelated = graph.expand([gseed], limit_each=2)
     assert any("AI Act" in node and "cross-regulation" in why for node, why in grelated)
+    # NIS2 incident reporting bridges to the AI Act / DORA incident provisions
+    nseed = next(n for n in graph.node_concepts if "NIS2 — Article 23" in n)
+    nrelated = graph.expand([nseed], limit_each=3)
+    assert any("cross-regulation" in why for _, why in nrelated)
 
 
 def test_abstention_on_out_of_scope(tmp_path):

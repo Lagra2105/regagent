@@ -31,6 +31,9 @@ CONCEPTS = [
     # impact assessment, biometric) and to DORA (security, breach/notification).
     "personal data", "data protection", "consent", "profiling", "automated",
     "data subject", "breach", "erasure", "encryption", "impact assessment",
+    # NIS2 concepts — bridge to DORA (incident reporting, supply chain) and to
+    # GDPR (encryption, notification).
+    "cybersecurity", "supply chain", "certification", "notification",
 ]
 
 
