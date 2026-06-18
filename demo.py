@@ -1,15 +1,19 @@
-"""RegAgent demo: build the corpus, ask compliance questions, see provenance + cost.
+"""RegAgent demo: build corpus + graph, ask compliance questions, see GraphRAG
+provenance (dense + graph-expanded sources) and per-run cost.
 
 Run:  python demo.py            (mock mode, no API key needed)
       OPENAI_API_KEY=sk-... python demo.py   (real answers)
 """
 from regagent.store import DocStore
 from regagent.ingest import load_sample
+from regagent.graph import KnowledgeGraph
 from regagent.agent import answer_question
 
+chunks = load_sample()
 store = DocStore()
-store.add(load_sample())
-print(f"Corpus loaded: {len(store.chunks)} chunks\n")
+store.add(chunks)
+graph = KnowledgeGraph().build(chunks)
+print(f"Corpus: {len(store.chunks)} chunks · graph: {len(graph.node_concepts)} nodes\n")
 
 questions = [
     "Is an AI system that scores citizens by social behaviour allowed?",
@@ -18,8 +22,9 @@ questions = [
 ]
 
 for q in questions:
-    a = answer_question(store, q, customer="acme-bank")
+    a = answer_question(store, q, customer="acme-bank", graph=graph)
     print("Q:", q)
     print("A:", a.answer)
-    print("Sources:", ", ".join(a.sources))
-    print(f"Cost: ${a.cost_usd:.5f}\n" + "-" * 70)
+    print("Dense sources:", ", ".join(a.sources))
+    print("Graph-expanded:", ", ".join(a.graph_sources) or "—")
+    print(f"Cost: ${a.cost_usd:.5f}\n" + "-" * 72)

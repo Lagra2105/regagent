@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from agentcost import track, SQLiteSink
 
 from .store import DocStore, Chunk
+from .graph import KnowledgeGraph
 
 SINK = SQLiteSink(os.environ.get("AGENTCOST_DB", "regagent.db"))
 
@@ -25,7 +26,8 @@ SINK = SQLiteSink(os.environ.get("AGENTCOST_DB", "regagent.db"))
 class Answer:
     question: str
     answer: str
-    sources: list[str] = field(default_factory=list)   # provenance
+    sources: list[str] = field(default_factory=list)        # dense provenance
+    graph_sources: list[str] = field(default_factory=list)  # graph-expanded provenance
     cost_usd: float = 0.0
 
 
@@ -48,7 +50,8 @@ def _route(question: str) -> tuple[str, dict]:
     return _llm(msg, model="gpt-4o-mini")
 
 
-def answer_question(store: DocStore, question: str, customer: str = "demo") -> Answer:
+def answer_question(store: DocStore, question: str, customer: str = "demo",
+                    graph: KnowledgeGraph | None = None) -> Answer:
     """Run the multi-step agent on one question, tracked end-to-end by agentcost."""
     with track("reg-answer", customer=customer, feature="compliance-qa",
                budget_usd=0.50, sink=SINK) as run:
@@ -59,7 +62,20 @@ def answer_question(store: DocStore, question: str, customer: str = "demo") -> A
         # 2) dense retrieval (provenance captured here)
         hits = store.search(question, k=4)
         sources = [c.source for c, _ in hits]
-        context = "\n\n".join(f"[{c.source}]\n{c.text}" for c, _ in hits)
+        by_source = {c.source: c.text for c, _ in hits}
+
+        # 2b) GRAPH retrieval — expand to related articles via shared concepts
+        #     (a tool call, no LLM cost — graph traversal is cheap vs the model)
+        graph_sources: list[str] = []
+        if graph is not None:
+            for node, why in graph.expand(sources):
+                graph_sources.append(f"{node} ({why})")
+                # pull the related article's text into context if we have it
+                rel = next((c for c in store.chunks if c.source == node), None)
+                if rel:
+                    by_source.setdefault(node, rel.text)
+
+        context = "\n\n".join(f"[{s}]\n{t}" for s, t in by_source.items())
 
         # 3) answer grounded in retrieved text, with citations
         msg = [
@@ -81,4 +97,5 @@ def answer_question(store: DocStore, question: str, customer: str = "demo") -> A
         run.mark_success()
         cost = run.total_cost
 
-    return Answer(question=question, answer=text, sources=sources, cost_usd=cost)
+    return Answer(question=question, answer=text, sources=sources,
+                  graph_sources=graph_sources, cost_usd=cost)
