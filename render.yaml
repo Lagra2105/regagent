@@ -1,0 +1,28 @@
+# One-click deploy to Render — https://render.com/deploy
+# RegAgent runs as a Docker web service. In-memory store by default (zero setup,
+# bulletproof for a demo). Set OPENAI_API_KEY for real answers; without it the
+# service runs in deterministic mock mode.
+#
+# To enable pgvector persistence instead, uncomment the `databases` block and the
+# DATABASE_URL env var.
+services:
+  - type: web
+    name: regagent
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false                 # set as a secret in the Render dashboard
+      - key: REGAGENT_GROUNDING
+        value: semantic             # paraphrase-robust grounding for the live demo
+      - key: REGAGENT_DAILY_USD_CAP
+        value: "2.00"               # protect the OpenAI budget on a public URL
+      # - key: DATABASE_URL
+      #   fromDatabase: { name: regagent-db, property: connectionString }
+
+# databases:
+#   - name: regagent-db
+#     plan: free
+#     postgresMajorVersion: "16"   # enable the `vector` extension after first deploy
