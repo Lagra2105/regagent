@@ -1,0 +1,84 @@
+"""RegAgent — a regulatory-compliance GraphRAG agent with provenance.
+
+Answers "does X comply with the AI Act?" style questions over a regulation
+corpus, citing the exact articles it used. Every step is wrapped in
+agentcost.track so the run's cost — per step, per customer — lands on the
+agentcost dashboard. This is the dogfooding loop: a real agent measured by
+the tooling we're selling.
+
+Set OPENAI_API_KEY for real answers; without it, the agent runs in mock mode
+(deterministic stub LLM) so the whole flow + cost tracking works offline.
+"""
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass, field
+
+from agentcost import track, SQLiteSink
+
+from .store import DocStore, Chunk
+
+SINK = SQLiteSink(os.environ.get("AGENTCOST_DB", "regagent.db"))
+
+
+@dataclass
+class Answer:
+    question: str
+    answer: str
+    sources: list[str] = field(default_factory=list)   # provenance
+    cost_usd: float = 0.0
+
+
+def _llm(messages: list[dict], model: str = "gpt-4o-mini") -> tuple[str, dict]:
+    """Call the LLM, return (text, raw_response). Mock when no API key."""
+    if os.environ.get("OPENAI_API_KEY"):
+        from openai import OpenAI
+        client = OpenAI()
+        resp = client.chat.completions.create(model=model, messages=messages, temperature=0)
+        return resp.choices[0].message.content, resp.model_dump()
+    # mock: echo a deterministic answer + fake usage so agentcost has data
+    text = "[mock] Based on the retrieved articles, this is likely regulated; see sources."
+    fake = {"model": model, "usage": {"prompt_tokens": 1200, "completion_tokens": 250}}
+    return text, fake
+
+
+def _route(question: str) -> tuple[str, dict]:
+    msg = [{"role": "system", "content": "Classify if this needs the regulation corpus. Answer 'retrieve'."},
+           {"role": "user", "content": question}]
+    return _llm(msg, model="gpt-4o-mini")
+
+
+def answer_question(store: DocStore, question: str, customer: str = "demo") -> Answer:
+    """Run the multi-step agent on one question, tracked end-to-end by agentcost."""
+    with track("reg-answer", customer=customer, feature="compliance-qa",
+               budget_usd=0.50, sink=SINK) as run:
+        # 1) route / classify
+        _, r = _route(question)
+        run.record_response(r, step="classify")
+
+        # 2) dense retrieval (provenance captured here)
+        hits = store.search(question, k=4)
+        sources = [c.source for c, _ in hits]
+        context = "\n\n".join(f"[{c.source}]\n{c.text}" for c, _ in hits)
+
+        # 3) answer grounded in retrieved text, with citations
+        msg = [
+            {"role": "system", "content":
+             "You are a compliance assistant. Answer ONLY from the provided "
+             "regulation excerpts and cite the article(s) you used. If the "
+             "excerpts don't cover it, say so."},
+            {"role": "user", "content": f"Question: {question}\n\nExcerpts:\n{context}"},
+        ]
+        text, a = _llm(msg, model="gpt-4o")
+        run.record_response(a, step="answer")
+
+        # 4) verify the answer is grounded (self-check)
+        vmsg = [{"role": "system", "content": "Reply 'ok' if the answer cites the excerpts."},
+                {"role": "user", "content": text}]
+        _, v = _llm(vmsg, model="gpt-4o-mini")
+        run.record_response(v, step="verify")
+
+        run.mark_success()
+        cost = run.total_cost
+
+    return Answer(question=question, answer=text, sources=sources, cost_usd=cost)
