@@ -2,7 +2,7 @@
 import os
 import sqlite3
 
-from regagent.ingest import load_sample
+from regagent.ingest import load_sample, load_all
 from regagent.store import DocStore
 from regagent.sparse import BM25Index
 from regagent.fusion import rrf
@@ -78,6 +78,27 @@ def test_agent_end_to_end_tracks_cost(tmp_path):
     n = sqlite3.connect(os.environ["AGENTCOST_DB"]).execute(
         "SELECT COUNT(*) FROM runs").fetchone()[0]
     assert n == 1
+
+
+def test_multi_regulation_retrieval():
+    chunks = load_all()
+    store = DocStore(); store.add(chunks)
+    bm25 = BM25Index().build(chunks)
+    q = "When must a major ICT incident be reported under DORA?"
+    fused = rrf(store.search(q, 6), bm25.search(q, 6), top=6)
+    hits = rerank(q, fused, top=4)
+    assert any("DORA — Article 19" in c.source for c, _ in hits)
+    # both regulations are present in the corpus
+    regs = {c.regulation for c in chunks}
+    assert {"EU AI Act", "DORA"} <= regs
+
+
+def test_graph_links_across_regulations():
+    graph = KnowledgeGraph().build(load_all())
+    seed = next(n for n in graph.node_concepts if "AI Act — Article 9" in n)
+    related = graph.expand([seed], limit_each=2)
+    # at least one related article must come from a different regulation (DORA)
+    assert any("DORA" in node and "cross-regulation" in why for node, why in related)
 
 
 def test_abstention_on_out_of_scope(tmp_path):

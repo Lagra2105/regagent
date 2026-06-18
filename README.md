@@ -1,12 +1,16 @@
 # RegAgent 🛡️
 
-**A compliance GraphRAG agent for the EU AI Act — with provenance, abstention,
-and measurable accuracy.**
+**A multi-regulation compliance GraphRAG agent for EU law (EU AI Act + DORA) —
+with provenance, abstention, and measurable accuracy.**
 
-Ask *"does X comply with the AI Act?"* and get an answer grounded in the exact
-articles, a confidence score, and — when the regulation doesn't cover it — an
-honest refusal instead of a hallucination. In compliance, a wrong answer is
-worse than none.
+Ask *"does X comply?"* and get an answer grounded in the exact articles, a
+confidence score, and — when the regulation doesn't cover it — an honest refusal
+instead of a hallucination. In compliance, a wrong answer is worse than none.
+
+It isn't tied to one law: the corpus is multi-regulation, and the knowledge graph
+links provisions **across** regulations (e.g. an EU AI Act risk-management duty
+connected to a DORA ICT-risk provision) — adding a regulation is dropping in text,
+not changing code.
 
 ## Why it's different
 
@@ -16,7 +20,7 @@ and you can't audit where an answer came from. RegAgent is built around **trust*
 | Capability | What it does |
 |---|---|
 | **Hybrid retrieval** | dense (meaning) + BM25 (exact terms) fused with RRF, then reranked |
-| **Knowledge graph** | links articles by shared concepts; pulls in related provisions the vector search misses, and explains the link |
+| **Knowledge graph** | links articles by shared concepts — within *and across* regulations (AI Act ↔ DORA); pulls in related provisions the vector search misses, and explains the link |
 | **Provenance** | every answer cites the articles it used; a grounding score (lexical *or* semantic) measures how supported it is |
 | **Abstention** | refuses out-of-scope / ungrounded questions — and skips the expensive answer step (≈18× cheaper) |
 | **Measured** | a golden benchmark reports retrieval recall@k, MRR, citation accuracy, grounding |
@@ -38,12 +42,13 @@ question
 
 ## Benchmark
 
-A golden set of 26 compliance questions, each tied to the article(s) that should
-ground a correct answer. Run `python -m eval.evaluate` to reproduce.
+A golden set of 32 compliance questions (EU AI Act + DORA), each tied to the
+article(s) that should ground a correct answer. Run `python -m eval.evaluate` to
+reproduce.
 
 ```
 # offline / deterministic (hash embeddings, no API key)
-Retrieval recall@4: 92%   MRR: 0.82   Citation recall: 92%   Grounding: 0.88
+Retrieval recall@4: 94%   MRR: 0.83   Citation recall: 94%   Grounding: 0.89
 ```
 
 The offline numbers use a toy hash-embedding so the suite runs without a key and
@@ -72,8 +77,9 @@ Config via env: `OPENAI_API_KEY`, `DATABASE_URL` (→ pgvector),
 
 - **Storage**: in-memory for dev; **pgvector** (Postgres) via `DATABASE_URL` for
   scale and persistence — one component is both database and vector store.
-- **Corpus**: 20 key AI Act articles built in; drop the full text into
-  `data/ai_act.txt` for all 113.
+- **Corpus**: 36 key EU AI Act articles + 15 DORA articles built in; drop the
+  full text into `data/ai_act.txt` (all 113) or add another regulation via
+  `load_corpus(path, regulation=...)` — no code change.
 - **Deploy**: Dockerfile included; runs on Railway / Render with a Postgres add-on.
 
 ## Roadmap
@@ -83,7 +89,8 @@ Config via env: `OPENAI_API_KEY`, `DATABASE_URL` (→ pgvector),
 - [x] Provenance scoring (lexical + semantic) + abstention
 - [x] Evaluation harness + cost/quality experiment
 - [x] FastAPI service, pgvector, Docker
-- [ ] Neo4j-backed graph; full AI Act + DORA corpora; cross-encoder reranker
+- [x] Multi-regulation corpus (EU AI Act + DORA) with cross-regulation graph links
+- [ ] Full AI Act (113 articles) + more regulations (GDPR); Neo4j-backed graph; cross-encoder reranker
 - [ ] Hosted demo + multi-tenant access
 
 ---

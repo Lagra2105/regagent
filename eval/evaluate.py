@@ -11,7 +11,7 @@ Run:  python -m eval.evaluate
 """
 from __future__ import annotations
 
-from regagent.ingest import load_sample
+from regagent.ingest import load_all
 from regagent.store import DocStore
 from regagent.sparse import BM25Index
 from regagent.fusion import rrf
@@ -33,7 +33,7 @@ def _rank_of(expected: set[str], ranked_sources: list[str]) -> int | None:
 
 
 def main() -> None:
-    chunks = load_sample()
+    chunks = load_all()   # AI Act + DORA — evaluate across the full multi-reg corpus
     store = DocStore(); store.add(chunks)
     bm25 = BM25Index().build(chunks)
     graph = KnowledgeGraph().build(chunks)

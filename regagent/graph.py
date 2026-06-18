@@ -21,8 +21,12 @@ CONCEPTS = [
     "social scoring", "subliminal", "conformity", "provider", "deployer",
     "biometric", "interact", "harm", "lifecycle", "bias", "importer",
     "distributor", "documentation", "logs", "ce marking", "declaration of conformity",
-    "registration", "serious incident", "fundamental rights", "quality management",
+    "registration", "fundamental rights", "quality management",
     "value chain", "corrective", "literacy",
+    # cross-regulation concepts (AI Act ↔ DORA): these connect provisions across
+    # different regulations — e.g. incident reporting appears in both.
+    "incident", "third-party", "resilience", "testing", "continuity",
+    "detection", "governance", "oversight", "ict",
 ]
 
 
@@ -60,13 +64,48 @@ class KnowledgeGraph:
         ranked = sorted(rel.items(), key=lambda kv: -len(kv[1]))
         return [(node, sorted(shared)) for node, shared in ranked[:limit]]
 
-    def expand(self, sources: list[str], limit_each: int = 2) -> list[tuple[str, str]]:
-        """For seed sources, return (related_source, 'via: concept,...') pairs."""
+    @staticmethod
+    def _reg(source: str) -> str:
+        """Regulation a node belongs to, inferred from its label prefix."""
+        return source.split(" — ", 1)[0] if " — " in source else ""
+
+    def _best_cross(self, source: str, exclude: set[str]) -> tuple[str, list[str]] | None:
+        """Best related article from a *different* regulation (most shared concepts)."""
+        reg = self._reg(source)
+        cross = [(n, sh) for n, sh in self.edges.get(source, {}).items()
+                 if n not in exclude and self._reg(n) and self._reg(n) != reg]
+        if not cross:
+            return None
+        node, shared = max(cross, key=lambda kv: len(kv[1]))
+        return node, sorted(shared)
+
+    def expand(self, sources: list[str], limit_each: int = 2,
+               ensure_cross_regulation: bool = True) -> list[tuple[str, str]]:
+        """For seed sources, return (related_source, 'via: concept,...') pairs.
+
+        When a related article comes from a *different* regulation than the seed,
+        the link is flagged. With ensure_cross_regulation, at least one
+        cross-regulation link per seed is surfaced when one exists — otherwise
+        same-regulation neighbours (which usually share more concepts) crowd it
+        out, and the cross-regulation insight is the whole point of GraphRAG here."""
         out: list[tuple[str, str]] = []
         seen = set(sources)
+
+        def _emit(s: str, node: str, shared: list[str]) -> None:
+            seen.add(node)
+            why = "via " + ", ".join(shared)
+            if self._reg(s) and self._reg(node) and self._reg(s) != self._reg(node):
+                why += " ↔ cross-regulation"
+            out.append((node, why))
+
         for s in sources:
-            for node, shared in self.neighbors(s, limit_each):
+            picked = self.neighbors(s, limit_each)
+            for node, shared in picked:
                 if node not in seen:
-                    seen.add(node)
-                    out.append((node, "via " + ", ".join(shared)))
+                    _emit(s, node, shared)
+            if ensure_cross_regulation and not any(self._reg(s) != self._reg(n)
+                                                   for n, _ in picked):
+                best = self._best_cross(s, seen)
+                if best:
+                    _emit(s, *best)
         return out

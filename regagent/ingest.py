@@ -193,7 +193,92 @@ SAMPLE = [
 ]
 
 
-def _chunk_text(text: str, source: str, max_chars: int = 800) -> list[Chunk]:
+# DORA — Regulation (EU) 2022/2554 on digital operational resilience for the
+# financial sector. Abridged key provisions, the demo's second regulation: it
+# shows RegAgent generalises beyond the AI Act, and shares concepts (incident
+# reporting, third-party risk, risk management) that the knowledge graph links
+# ACROSS regulations.
+DORA = [
+    ("DORA — Article 1 (Subject matter)",
+     "This Regulation lays down uniform requirements concerning the security of "
+     "network and information systems supporting the business processes of financial "
+     "entities, covering ICT risk management, incident reporting, resilience testing, "
+     "and the management of ICT third-party risk."),
+    ("DORA — Article 5 (ICT risk management governance)",
+     "Financial entities shall have an internal governance and control framework that "
+     "ensures effective management of ICT risk. The management body bears the ultimate "
+     "responsibility for managing the financial entity's ICT risk and shall define, "
+     "approve and oversee the ICT risk management framework."),
+    ("DORA — Article 6 (ICT risk management framework)",
+     "Financial entities shall have a sound, comprehensive and well-documented ICT "
+     "risk management framework that enables them to address ICT risk quickly, "
+     "efficiently and comprehensively, and to ensure a high level of digital "
+     "operational resilience, reviewed at least once a year."),
+    ("DORA — Article 8 (Identification)",
+     "Financial entities shall identify, classify and adequately document all "
+     "ICT-supported business functions, roles and responsibilities, the information "
+     "and ICT assets supporting them, and their dependencies on ICT third-party "
+     "service providers."),
+    ("DORA — Article 9 (Protection and prevention)",
+     "Financial entities shall continuously monitor and control the security and "
+     "functioning of ICT systems and tools, and minimise the impact of ICT risk "
+     "through appropriate ICT security tools, policies and procedures ensuring the "
+     "confidentiality, integrity, availability and authenticity of data."),
+    ("DORA — Article 10 (Detection)",
+     "Financial entities shall have mechanisms to promptly detect anomalous "
+     "activities, including ICT network performance issues and ICT-related incidents, "
+     "and to identify potential single points of failure, with multiple layers of "
+     "control and defined alert thresholds."),
+    ("DORA — Article 11 (Response and recovery)",
+     "Financial entities shall put in place a comprehensive ICT business continuity "
+     "policy and associated response and recovery plans, ensuring the continuity of "
+     "critical functions and rapid, appropriate response to ICT-related incidents."),
+    ("DORA — Article 17 (ICT-related incident management process)",
+     "Financial entities shall define, establish and implement an ICT-related incident "
+     "management process to detect, manage and notify ICT-related incidents, including "
+     "early warning indicators, procedures to identify, track, log, categorise and "
+     "classify incidents according to their priority and severity."),
+    ("DORA — Article 18 (Classification of incidents)",
+     "Financial entities shall classify ICT-related incidents and determine their "
+     "impact based on criteria including the number of clients or counterparts "
+     "affected, the duration of the incident, geographical spread, data losses, the "
+     "criticality of services affected, and the economic impact."),
+    ("DORA — Article 19 (Reporting of major incidents)",
+     "Financial entities shall report major ICT-related incidents to the relevant "
+     "competent authority, submitting an initial notification, an intermediate report "
+     "as the situation evolves, and a final report once the root cause analysis is "
+     "complete, within the time limits set out in the Regulation."),
+    ("DORA — Article 24 (Resilience testing requirements)",
+     "Financial entities shall establish a sound and comprehensive digital operational "
+     "resilience testing programme, testing all critical ICT systems and applications "
+     "at least yearly, with tests carried out by independent internal or external "
+     "parties."),
+    ("DORA — Article 26 (Threat-led penetration testing)",
+     "Financial entities identified as significant shall carry out advanced testing by "
+     "means of threat-led penetration testing (TLPT) at least every three years, "
+     "covering several or all critical functions and performed on live production "
+     "systems by accredited testers."),
+    ("DORA — Article 28 (ICT third-party risk — general principles)",
+     "Financial entities shall manage ICT third-party risk as an integral component of "
+     "ICT risk, maintaining a register of information on all contractual arrangements "
+     "with ICT third-party service providers and adopting a strategy on ICT "
+     "third-party risk."),
+    ("DORA — Article 30 (Key contractual provisions)",
+     "Contractual arrangements with ICT third-party service providers shall set out, "
+     "in writing, clear and complete service descriptions, locations of data "
+     "processing, data protection provisions, access and audit rights, exit "
+     "strategies, and termination rights, especially for services supporting critical "
+     "or important functions."),
+    ("DORA — Article 45 (Oversight of critical ICT third-party providers)",
+     "ICT third-party service providers designated as critical are subject to a Union "
+     "oversight framework, under which a Lead Overseer assesses whether they have in "
+     "place comprehensive rules and controls to manage the ICT risks they may pose to "
+     "financial entities."),
+]
+
+
+def _chunk_text(text: str, source: str, regulation: str = "",
+                max_chars: int = 800) -> list[Chunk]:
     parts, buf = [], ""
     for sent in re.split(r"(?<=[.])\s+", text):
         if len(buf) + len(sent) > max_chars and buf:
@@ -202,25 +287,46 @@ def _chunk_text(text: str, source: str, max_chars: int = 800) -> list[Chunk]:
         buf += " " + sent
     if buf.strip():
         parts.append(buf.strip())
-    return [Chunk(id=f"{source}#{i}", text=p, source=source) for i, p in enumerate(parts)]
+    return [Chunk(id=f"{source}#{i}", text=p, source=source, regulation=regulation)
+            for i, p in enumerate(parts)]
 
 
-def load_sample() -> list[Chunk]:
+def _load(entries: list[tuple[str, str]], regulation: str) -> list[Chunk]:
     chunks: list[Chunk] = []
-    for source, text in SAMPLE:
-        chunks.extend(_chunk_text(text, source))
+    for source, text in entries:
+        chunks.extend(_chunk_text(text, source, regulation))
     return chunks
 
 
-def load_corpus(path: str) -> list[Chunk]:
-    """Load a full regulation file split on '## Article N' headers."""
+def load_sample() -> list[Chunk]:
+    """The built-in EU AI Act corpus."""
+    return _load(SAMPLE, "EU AI Act")
+
+
+def load_dora() -> list[Chunk]:
+    """The built-in DORA corpus."""
+    return _load(DORA, "DORA")
+
+
+def load_all() -> list[Chunk]:
+    """All built-in regulations — multi-regulation corpus for the demo."""
+    return load_sample() + load_dora()
+
+
+def load_corpus(path: str, regulation: str = "EU AI Act") -> list[Chunk]:
+    """Load a full regulation file split on '## Article N' headers.
+
+    Drop the official text in `path` (e.g. data/ai_act.txt, all 113 articles) to
+    replace the built-in sample — no code change needed. Falls back to the sample
+    when the file is absent."""
     if not os.path.exists(path):
         return load_sample()
     raw = open(path, encoding="utf-8").read()
+    prefix = regulation.replace("EU ", "") if regulation else "Regulation"
     chunks: list[Chunk] = []
     for block in re.split(r"\n(?=##\s)", raw):
         m = re.match(r"##\s*(.+)", block)
-        source = ("AI Act — " + m.group(1).strip()) if m else "AI Act"
+        source = (f"{prefix} — " + m.group(1).strip()) if m else prefix
         body = block[block.find("\n"):].strip() if "\n" in block else block
-        chunks.extend(_chunk_text(body, source))
+        chunks.extend(_chunk_text(body, source, regulation))
     return chunks

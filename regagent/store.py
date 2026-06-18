@@ -21,6 +21,7 @@ class Chunk:
     id: str
     text: str
     source: str        # e.g. "AI Act — Article 5(1)(a)"
+    regulation: str = ""   # e.g. "EU AI Act" / "DORA" — enables multi-regulation corpora
     embedding: list[float] | None = None
 
 

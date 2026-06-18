@@ -59,4 +59,17 @@ GOLDEN = [
      {"Article 27"}),
     ("When do the AI Act rules start to apply?",
      {"Article 113"}),
+    # --- DORA (Digital Operational Resilience Act) ---
+    ("Who is ultimately responsible for ICT risk management under DORA?",
+     {"DORA — Article 5"}),
+    ("When must a major ICT-related incident be reported under DORA?",
+     {"DORA — Article 19"}),
+    ("How are ICT-related incidents classified under DORA?",
+     {"DORA — Article 18"}),
+    ("Is threat-led penetration testing required under DORA?",
+     {"DORA — Article 26"}),
+    ("What must contracts with ICT third-party providers contain under DORA?",
+     {"DORA — Article 30"}),
+    ("How often must financial entities test digital operational resilience?",
+     {"DORA — Article 24"}),
 ]
