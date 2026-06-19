@@ -120,7 +120,130 @@ def analyze(body: Ask) -> dict:
 @app.get("/", response_class=HTMLResponse)
 def home() -> str:
     return """<!doctype html><html lang=en><head><meta charset=utf-8>
-<title>RegAgent — EU compliance agent (AI Act · DORA · GDPR · NIS2)</title>
+<title>RegAgent — EU compliance agent for AI Act, DORA, GDPR &amp; NIS2</title>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<meta name=description content="A compliance agent for EU regulation — grounded, cited answers across the EU AI Act, DORA, GDPR and NIS2, with confidence scores and honest abstention.">
+<link rel=preconnect href="https://fonts.googleapis.com">
+<link rel=preconnect href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel=stylesheet>
+<style>
+ :root{--bg:#e9edf2;--surface:#fff;--ink:#0f1827;--ink2:#33415a;--muted:#5f6c7e;
+  --line:#cdd5df;--brand:#3f5d7d;--brand-ink:#2b4a68;--brand-soft:#e9eef4;
+  --grad:linear-gradient(180deg,#ffffff 0,#eef1f5 100%);--bevel:inset 0 1px 0 rgba(255,255,255,.85);
+  --steel:linear-gradient(180deg,#5d6e82 0,#46566a 100%)}
+ *{box-sizing:border-box} html,body{margin:0}
+ body{font-family:Inter,-apple-system,system-ui,Segoe UI,sans-serif;color:var(--ink);line-height:1.6;
+  -webkit-font-smoothing:antialiased;background:linear-gradient(180deg,#eef2f6 0,#dde3ea 100%) fixed}
+ a{color:var(--brand);text-decoration:none}
+ .nav{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:18px;
+  padding:13px 22px;background:rgba(238,242,246,.86);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+ .brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:16px;letter-spacing:-.01em}
+ .brand .dot{width:26px;height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:15px;
+  background:radial-gradient(120% 120% at 30% 20%,#93a2b3,#637184 55%,#4b5868);border:1px solid #3f4b59}
+ .nav .sp{flex:1} .nav a.lnk{color:var(--ink2);font-size:13.5px;font-weight:500} .nav a.lnk:hover{color:var(--ink)}
+ .btn{display:inline-block;padding:9px 16px;border-radius:5px;font-weight:600;font-size:13.5px;cursor:pointer;
+  background:var(--steel);color:#fff;border:1px solid #3a4a5b;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 1px 2px rgba(15,23,42,.22)}
+ .btn:hover{filter:brightness(1.08)}
+ .btn.ghost{background:var(--grad);color:var(--brand-ink);border-color:#cbd4de;box-shadow:var(--bevel)}
+ .wrap{max-width:980px;margin:0 auto;padding:0 22px} section{padding:52px 0}
+ .hero{text-align:center;padding:72px 0 42px}
+ .eyebrow{font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);margin-bottom:16px}
+ h1{font-size:46px;line-height:1.08;letter-spacing:-.03em;margin:0 0 18px;font-weight:700}
+ .hero p{font-size:18px;color:var(--ink2);max-width:62ch;margin:0 auto 26px}
+ .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+ .trust{margin-top:28px;font-size:13px;color:var(--muted)}
+ h2{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);margin:0 0 10px}
+ .lead{font-size:26px;letter-spacing:-.02em;font-weight:700;margin:0 0 14px;max-width:32ch}
+ .muted{color:var(--ink2);font-size:16px;max-width:64ch}
+ .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px}
+ .feat{background:var(--grad);border:1px solid var(--line);border-radius:6px;padding:18px;box-shadow:var(--bevel),0 1px 2px rgba(15,23,42,.05)}
+ .feat h3{font-size:15px;margin:0 0 6px;font-weight:600} .feat p{font-size:13.5px;color:var(--ink2);margin:0;line-height:1.5}
+ .flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:22px}
+ .step{background:var(--grad);border:1px solid var(--line);border-radius:5px;padding:9px 13px;font-size:13px;font-weight:500;box-shadow:var(--bevel)}
+ .arr{color:var(--muted)}
+ .bench{background:#0f1827;border-radius:8px;padding:30px;color:#fff;text-align:center}
+ .bench .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+ .bench b{display:block;font-size:30px;font-weight:700;letter-spacing:-.02em} .bench .stats span{font-size:12.5px;color:#9aa6b6}
+ .bench .note{margin-top:20px;font-size:13px;color:#9aa6b6}
+ .two{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:22px}
+ .prod{background:var(--grad);border:1px solid var(--line);border-radius:6px;padding:20px;box-shadow:var(--bevel)}
+ .prod .k{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--brand);margin-bottom:6px}
+ .prod h3{margin:0 0 7px;font-size:18px} .prod p{margin:0;font-size:14px;color:var(--ink2);line-height:1.55}
+ .endcta{text-align:center;background:var(--grad);border:1px solid var(--line);border-radius:8px;padding:40px 22px;box-shadow:var(--bevel)}
+ footer{padding:30px 22px 50px;text-align:center;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+ @media(max-width:760px){h1{font-size:33px}.hero p{font-size:16px}.grid{grid-template-columns:1fr}.bench .stats{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.nav a.lnk{display:none}}
+</style></head><body>
+<div class=nav>
+ <span class=brand><span class=dot>🛡️</span> RegAgent</span><span class=sp></span>
+ <a class=lnk href="#how">How it works</a><a class=lnk href="#benchmark">Benchmark</a>
+ <a class=lnk href="https://github.com/Lagra2105/regagent" target=_blank>GitHub</a>
+ <a class=btn href="/demo">Launch demo →</a>
+</div>
+<section class="hero wrap">
+ <div class=eyebrow>EU regulatory compliance · AI Act · DORA · GDPR · NIS2</div>
+ <h1>Compliance answers you can audit.</h1>
+ <p>RegAgent answers questions across EU regulation — grounded in the exact articles, scored for confidence, linked across laws, and honestly refused when the regulation doesn't cover them. Because in compliance, a confident wrong answer is worse than none.</p>
+ <div class=cta><a class=btn href="/demo">Launch live demo →</a><a class="btn ghost" href="https://github.com/Lagra2105/regagent" target=_blank>View the source</a></div>
+ <div class=trust>4 regulations · 75 articles · measured accuracy · English &amp; French</div>
+</section>
+<section class=wrap>
+ <h2>The problem</h2>
+ <div class=lead>Generic AI paraphrases, invents, and can't show its work.</div>
+ <p class=muted>For legal and compliance teams that's a liability, not a tool — you can't file an answer you can't trace to a source. RegAgent is built the other way around: every answer is tied to the articles it came from, scored for how well it's supported, and withheld when the grounding isn't there.</p>
+</section>
+<section class=wrap>
+ <h2>What it does</h2>
+ <div class=grid>
+  <div class=feat><h3>Provenance</h3><p>Cites the exact articles it used and scores how well the answer is supported — auditable, not a black box.</p></div>
+  <div class=feat><h3>Abstention</h3><p>Refuses out-of-scope or weakly-grounded questions instead of guessing. A safe "consult counsel" beats a confident hallucination.</p></div>
+  <div class=feat><h3>Hybrid retrieval</h3><p>Dense meaning search and exact-term search, fused and reranked, so the right provision lands on top.</p></div>
+  <div class=feat><h3>Knowledge graph</h3><p>Links provisions across regulations — an AI Act duty connected to its DORA, GDPR or NIS2 counterpart.</p></div>
+  <div class=feat><h3>Multi-regulation analysis</h3><p>Decomposes "does our system comply?" into focused sub-questions across all four laws, then synthesises one cited answer.</p></div>
+  <div class=feat><h3>Measured</h3><p>A published benchmark — recall, citation accuracy, grounding — not a demo-day vibe. Reproducible from the repo.</p></div>
+ </div>
+</section>
+<section class=wrap id=how>
+ <h2>How it works</h2>
+ <div class=lead>A controlled agent pipeline — every step decided, every step measured.</div>
+ <div class=flow>
+  <span class=step>Classify</span><span class=arr>→</span><span class=step>Hybrid retrieval</span><span class=arr>→</span>
+  <span class=step>Abstain gate</span><span class=arr>→</span><span class=step>Graph expand</span><span class=arr>→</span>
+  <span class=step>Answer</span><span class=arr>→</span><span class=step>Verify + grounding score</span>
+ </div>
+ <p class=muted style="margin-top:18px">It plans, retrieves, decides whether to answer or refuse, expands across regulations, then checks its own work. Not a chatbot — an agent that makes decisions and can say "I don't know."</p>
+</section>
+<section class=wrap id=benchmark>
+ <h2>Measured, not claimed</h2>
+ <div class=bench>
+  <div class=stats>
+   <div><b>98%</b><span>retrieval recall@4</span></div><div><b>98%</b><span>citation recall</span></div>
+   <div><b>0.89</b><span>grounding</span></div><div><b>4</b><span>regulations</span></div>
+  </div>
+  <div class=note>42-question golden set across AI Act, DORA, GDPR &amp; NIS2 · reproducible offline · higher with production embeddings</div>
+ </div>
+</section>
+<section class=wrap>
+ <h2>The bigger picture</h2>
+ <div class=lead>Two products, one loop.</div>
+ <div class=two>
+  <div class=prod><div class=k>The product</div><h3>RegAgent</h3><p>The compliance agent itself — trusted answers across EU regulation, available as a REST API and a UI.</p></div>
+  <div class=prod><div class=k>The infrastructure</div><h3>agentcost</h3><p>Cost &amp; economics tracking for AI agents. RegAgent runs on it — surfacing the real cost per trusted answer, and catching real bugs along the way. The agent is the product; agentcost is the layer beneath it.</p></div>
+ </div>
+</section>
+<section class=wrap>
+ <div class=endcta>
+  <div class=lead style="font-size:24px;margin:0 auto 18px">See it answer a real compliance question.</div>
+  <div class=cta><a class=btn href="/demo">Launch live demo →</a><a class="btn ghost" href="/dashboard/">View the cost dashboard</a></div>
+ </div>
+</section>
+<footer>Built by a Senior Data Scientist &amp; MLOps engineer · <a href="https://github.com/Lagra2105/regagent" target=_blank>GitHub</a> · instrumented by agentcost</footer>
+</body></html>"""
+
+
+@app.get("/demo", response_class=HTMLResponse)
+def demo() -> str:
+    return """<!doctype html><html lang=en><head><meta charset=utf-8>
+<title>RegAgent — live demo (AI Act · DORA · GDPR · NIS2)</title>
 <meta name=viewport content="width=device-width,initial-scale=1">
 <link rel=preconnect href="https://fonts.googleapis.com">
 <link rel=preconnect href="https://fonts.gstatic.com" crossorigin>
