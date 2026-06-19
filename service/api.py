@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Header, HTTPException, Depends
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
@@ -53,6 +53,22 @@ class Ask(BaseModel):
     lang: str = "auto"   # "auto" | "en" | "fr" — language of the answer
 
 
+# Multi-tenant API keys for integrations. Set REGAGENT_KEYS to a comma-separated
+# allow-list to require an X-API-Key header (each key = one tenant, used for cost
+# attribution). Unset = open mode (the public demo). The agent stays hosted —
+# customers integrate via the API/MCP without deploying anything in their infra.
+_KEYS = {k.strip() for k in os.environ.get("REGAGENT_KEYS", "").split(",") if k.strip()}
+
+
+def tenant(x_api_key: str | None = Header(default=None)) -> str:
+    """Resolve the calling tenant from its X-API-Key (used as the cost customer)."""
+    if _KEYS:
+        if not x_api_key or x_api_key not in _KEYS:
+            raise HTTPException(status_code=401, detail="invalid or missing API key")
+        return x_api_key
+    return x_api_key or "demo"   # open mode: no key required
+
+
 @app.get("/healthz")
 def healthz() -> dict:
     # openai_key_detected: lets us confirm the secret reached the app (the key
@@ -63,7 +79,7 @@ def healthz() -> dict:
 
 
 @app.post("/ask")
-def ask(body: Ask) -> dict:
+def ask(body: Ask, who: str = Depends(tenant)) -> dict:
     # Public-demo budget guard: stop calling the model once the daily cap is hit.
     if not GUARD.allowed():
         return {
@@ -75,7 +91,7 @@ def ask(body: Ask) -> dict:
             "grounded": False, "abstained": True, "weak_claims": [],
             "cost_usd": 0.0, "demo_limited": True,
         }
-    a = answer_question(_store, body.question, customer=body.customer,
+    a = answer_question(_store, body.question, customer=who,
                         graph=_graph, bm25=_bm25, lang=body.lang)
     GUARD.add(a.cost_usd)
     return {
@@ -92,7 +108,7 @@ def ask(body: Ask) -> dict:
 
 
 @app.post("/analyze")
-def analyze(body: Ask) -> dict:
+def analyze(body: Ask, who: str = Depends(tenant)) -> dict:
     """Multi-regulation analysis: decompose → answer each → synthesise."""
     if not GUARD.allowed():
         return {"question": body.question,
@@ -102,7 +118,7 @@ def analyze(body: Ask) -> dict:
                 "sub_answers": [], "sources": [], "abstained": True,
                 "cost_usd": 0.0, "demo_limited": True}
     from regagent.agent import answer_complex
-    a = answer_complex(_store, body.question, customer=body.customer,
+    a = answer_complex(_store, body.question, customer=who,
                        graph=_graph, bm25=_bm25, lang=body.lang)
     GUARD.add(a.cost_usd)
     return {
@@ -228,6 +244,14 @@ def home() -> str:
  <div class=two>
   <div class=prod><div class=k>The product</div><h3>RegAgent</h3><p>The compliance agent itself — trusted answers across EU regulation, available as a REST API and a UI.</p></div>
   <div class=prod><div class=k>The infrastructure</div><h3>agentcost</h3><p>Cost &amp; economics tracking for AI agents. RegAgent runs on it — surfacing the real cost per trusted answer, and catching real bugs along the way. The agent is the product; agentcost is the layer beneath it.</p></div>
+ </div>
+</section>
+<section class=wrap>
+ <h2>Integrations</h2>
+ <div class=lead>Plug it into your environment — without deploying it.</div>
+ <p class=muted>Call the REST API, or drop in the MCP server to use RegAgent as a tool inside Claude, an IDE assistant, or your own agent stack. The agent stays hosted — no model, no corpus and no data in your infrastructure.</p>
+ <div class=flow style="margin-top:18px">
+  <span class=step>REST API</span><span class=step>MCP server</span><span class=step>Multi-tenant API keys</span><span class=step>English &amp; French</span>
  </div>
 </section>
 <section class=wrap>

@@ -95,6 +95,7 @@ Config via env: `OPENAI_API_KEY`, `DATABASE_URL` (→ pgvector),
 - [x] Multi-regulation corpus (EU AI Act + DORA + GDPR + NIS2) with cross-regulation graph links
 - [x] Pluggable reranker — lexical default, opt-in cross-encoder (`REGAGENT_RERANK=cross-encoder`)
 - [x] Multi-regulation analysis (`/analyze`) — query decomposition → per-sub answers → synthesis
+- [x] Integrations — REST API, multi-tenant API keys (`REGAGENT_KEYS`), and an MCP server (`mcp_server/`) to plug into any AI host; agent stays hosted, nothing runs in the customer's infra
 - [ ] Full AI Act (113 articles) via `data/ai_act.txt`; Neo4j-backed graph
 - [ ] Hosted demo + multi-tenant access
 
