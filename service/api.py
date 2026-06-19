@@ -114,7 +114,7 @@ def home() -> str:
 <div class=pills>
  <span class=pill>hybrid retrieval</span><span class=pill>knowledge graph</span><span class=pill>provenance</span><span class=pill>abstention</span><span class=pill>cost-tracked</span>
 </div>
-<div class=bench>Reproducible offline benchmark · 26-question golden set: <b>retrieval recall@4 92%</b> · <b>citation recall 92%</b> · <b>grounding 0.88</b> <span style="opacity:.7">— higher with production embeddings</span></div>
+<div class=bench>Reproducible offline benchmark · 42-question golden set (AI Act · DORA · GDPR · NIS2): <b>retrieval recall@4 98%</b> · <b>citation recall 98%</b> · <b>grounding 0.89</b> <span style="opacity:.7">— higher with production embeddings</span></div>
 <textarea id=q placeholder="e.g. Is social scoring of citizens allowed under the AI Act?"></textarea>
 <div class=row><button id=btn onclick=ask()>Ask</button></div>
 <div class=exlbl>Try one:</div>
