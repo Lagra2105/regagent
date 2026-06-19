@@ -34,6 +34,41 @@ RETRIEVAL_MIN = float(os.environ.get("REGAGENT_RETRIEVAL_MIN", "0.4"))
 # 'semantic' (embedding-based, paraphrase-robust) or 'lexical' (term overlap).
 GROUNDING_METHOD = os.environ.get("REGAGENT_GROUNDING", "lexical")
 
+# Multilingual answers — the corpus stays English (multilingual embeddings handle
+# cross-lingual retrieval), but the LLM replies in the user's language. Citations
+# (article labels) are language-agnostic, so they stay correct.
+_LANG_NAME = {"en": "English", "fr": "French"}
+
+
+def _lang_instruction(lang: str) -> str:
+    if not lang or lang == "auto":
+        return " Respond in the same language as the question."
+    return f" Respond in {_LANG_NAME.get(lang, 'English')}."
+
+
+# Localised abstention messages (auto/en default to English; fr is translated).
+_ABSTAIN_EARLY = {
+    "en": "Out of scope — no relevant provision was found in the available "
+          "regulation. I won't answer without grounding; please rephrase or "
+          "consult qualified legal counsel.",
+    "fr": "Hors champ — aucune disposition pertinente n'a été trouvée dans la "
+          "réglementation disponible. Je ne répondrai pas sans fondement ; "
+          "veuillez reformuler ou consulter un conseil juridique qualifié.",
+}
+_ABSTAIN_WEAK = {
+    "en": "I can't answer this with confidence from the available provisions. "
+          "The retrieved articles don't sufficiently cover this question — "
+          "please consult qualified legal counsel.",
+    "fr": "Je ne peux pas répondre à cette question avec certitude à partir des "
+          "dispositions disponibles. Les articles récupérés ne couvrent pas "
+          "suffisamment cette question — veuillez consulter un conseil juridique "
+          "qualifié.",
+}
+
+
+def _msg(table: dict, lang: str) -> str:
+    return table.get(lang, table["en"])
+
 
 @dataclass
 class Answer:
@@ -76,7 +111,7 @@ def _route(question: str) -> tuple[str, dict]:
 
 def answer_question(store: DocStore, question: str, customer: str = "demo",
                     graph: KnowledgeGraph | None = None,
-                    bm25: BM25Index | None = None) -> Answer:
+                    bm25: BM25Index | None = None, lang: str = "auto") -> Answer:
     """Run the multi-step agent on one question, tracked end-to-end by agentcost."""
     with track("reg-answer", customer=customer, feature="compliance-qa",
                budget_usd=0.50, sink=SINK) as run:
@@ -104,10 +139,7 @@ def answer_question(store: DocStore, question: str, customer: str = "demo",
             from .provenance import ProvenanceReport
             empty = ProvenanceReport(0.0, 0, 0, [], [])
             return Answer(
-                question=question,
-                answer="Out of scope — no relevant provision was found in the "
-                       "available regulation. I won't answer without grounding; "
-                       "please rephrase or consult qualified legal counsel.",
+                question=question, answer=_msg(_ABSTAIN_EARLY, lang),
                 sources=[], graph_sources=[], grounding=0.0,
                 provenance=empty, abstained=True, cost_usd=run.total_cost)
 
@@ -129,7 +161,7 @@ def answer_question(store: DocStore, question: str, customer: str = "demo",
             {"role": "system", "content":
              "You are a compliance assistant. Answer ONLY from the provided "
              "regulation excerpts and cite the article(s) you used. If the "
-             "excerpts don't cover it, say so."},
+             "excerpts don't cover it, say so." + _lang_instruction(lang)},
             {"role": "user", "content": f"Question: {question}\n\nExcerpts:\n{context}"},
         ]
         text, a = _llm(msg, model=ANSWER_MODEL)
@@ -151,9 +183,7 @@ def answer_question(store: DocStore, question: str, customer: str = "demo",
         #    If grounding is too weak, refuse rather than hallucinate.
         abstained = False
         if not grounded:
-            text = ("I can't answer this with confidence from the available "
-                    "provisions. The retrieved articles don't sufficiently cover "
-                    "this question — please consult qualified legal counsel.")
+            text = _msg(_ABSTAIN_WEAK, lang)
             abstained = True
             run.mark_failure()
         else:
@@ -186,14 +216,14 @@ class ComplexAnswer:
     cost_usd: float = 0.0
 
 
-def plan_subquestions(question: str) -> tuple[list[str], dict]:
+def plan_subquestions(question: str, lang: str = "auto") -> tuple[list[str], dict]:
     """Decompose a compliance question into focused sub-questions (plan step)."""
     msg = [
         {"role": "system", "content":
          "You are a compliance analyst. Break the user's question into 2 to 4 "
          "focused, self-contained sub-questions, each targeting a specific "
          "obligation under the EU AI Act, DORA, GDPR or NIS2. Return ONLY the "
-         "sub-questions, one per line, no numbering or commentary."},
+         "sub-questions, one per line, no numbering or commentary." + _lang_instruction(lang)},
         {"role": "user", "content": question},
     ]
     text, raw = _llm(msg, model="gpt-4o-mini")
@@ -206,7 +236,8 @@ def plan_subquestions(question: str) -> tuple[list[str], dict]:
     return subs[:4], raw
 
 
-def _synthesise(question: str, sub_answers: list[Answer]) -> tuple[str, dict]:
+def _synthesise(question: str, sub_answers: list[Answer],
+                lang: str = "auto") -> tuple[str, dict]:
     """Combine grounded sub-answers into one coherent, cited answer."""
     blocks = "\n\n".join(
         f"Sub-question: {sa.question}\nFinding: {sa.answer}\n"
@@ -221,7 +252,8 @@ def _synthesise(question: str, sub_answers: list[Answer]) -> tuple[str, dict]:
          "You are a compliance analyst. Using ONLY the findings below (each "
          "grounded in cited articles), write one coherent answer to the overall "
          "question. Cite the article labels you rely on. If a sub-question found "
-         "no provision, state that the regulation does not cover it. Be concise."},
+         "no provision, state that the regulation does not cover it. Be concise."
+         + _lang_instruction(lang)},
         {"role": "user", "content": f"Overall question: {question}\n\nFindings:\n{blocks}"},
     ]
     return _llm(msg, model=ANSWER_MODEL)
@@ -229,17 +261,17 @@ def _synthesise(question: str, sub_answers: list[Answer]) -> tuple[str, dict]:
 
 def answer_complex(store: DocStore, question: str, customer: str = "demo",
                    graph: KnowledgeGraph | None = None,
-                   bm25: BM25Index | None = None) -> ComplexAnswer:
+                   bm25: BM25Index | None = None, lang: str = "auto") -> ComplexAnswer:
     """Plan → run each sub-question through the pipeline → synthesise. Tracked."""
     with track("reg-analyze", customer=customer, feature="multi-reg-analysis",
                budget_usd=1.0, sink=SINK) as run:
-        subs, plan_raw = plan_subquestions(question)
+        subs, plan_raw = plan_subquestions(question, lang=lang)
         run.record_response(plan_raw, step="plan")
 
         sub_answers = [answer_question(store, s, customer=customer,
-                                       graph=graph, bm25=bm25) for s in subs]
+                                       graph=graph, bm25=bm25, lang=lang) for s in subs]
 
-        text, syn_raw = _synthesise(question, sub_answers)
+        text, syn_raw = _synthesise(question, sub_answers, lang=lang)
         run.record_response(syn_raw, step="synthesize")
 
         all_abstained = all(sa.abstained for sa in sub_answers) if sub_answers else True

@@ -40,6 +40,7 @@ _graph = KnowledgeGraph().build(_chunks)
 class Ask(BaseModel):
     question: str
     customer: str = "demo"
+    lang: str = "auto"   # "auto" | "en" | "fr" — language of the answer
 
 
 @app.get("/healthz")
@@ -65,7 +66,7 @@ def ask(body: Ask) -> dict:
             "cost_usd": 0.0, "demo_limited": True,
         }
     a = answer_question(_store, body.question, customer=body.customer,
-                        graph=_graph, bm25=_bm25)
+                        graph=_graph, bm25=_bm25, lang=body.lang)
     GUARD.add(a.cost_usd)
     return {
         "question": a.question,
@@ -92,7 +93,7 @@ def analyze(body: Ask) -> dict:
                 "cost_usd": 0.0, "demo_limited": True}
     from regagent.agent import answer_complex
     a = answer_complex(_store, body.question, customer=body.customer,
-                       graph=_graph, bm25=_bm25)
+                       graph=_graph, bm25=_bm25, lang=body.lang)
     GUARD.add(a.cost_usd)
     return {
         "question": a.question,
@@ -131,6 +132,7 @@ def home() -> str:
  .synth .h{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--brand);margin-bottom:7px}
  .ex{font-size:12.5px;color:var(--muted);border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;cursor:pointer}
  .ex:hover{border-color:var(--brand);color:var(--brand)}
+ select#lang{padding:10px;border:1px solid var(--line);border-radius:10px;font:inherit;background:#fff;cursor:pointer}
  .exwrap{margin:14px 0 4px;display:flex;gap:8px;flex-wrap:wrap}
  .exlbl{font-size:12px;color:var(--muted);margin:18px 0 2px}
  .card{margin-top:22px;border:1px solid var(--line);border-radius:16px;padding:20px;display:none}
@@ -146,13 +148,14 @@ def home() -> str:
  a{color:var(--brand)}
 </style>
 <h1>🛡️ RegAgent</h1>
-<div class=sub>A compliance agent for EU regulation — <b>EU AI Act</b>, <b>DORA</b>, <b>GDPR</b> &amp; <b>NIS2</b>. Every answer is grounded in the exact articles, scored for how well it's supported, and refused when the regulation doesn't cover it — because in compliance a confident wrong answer is worse than none.</div>
+<div class=sub>A compliance agent for EU regulation — <b>EU AI Act</b>, <b>DORA</b>, <b>GDPR</b> &amp; <b>NIS2</b>. Every answer is grounded in the exact articles, scored for how well it's supported, and refused when the regulation doesn't cover it — because in compliance a confident wrong answer is worse than none. Ask in English or French (set the language on the right).</div>
 <div class=pills>
  <span class=pill>hybrid retrieval</span><span class=pill>knowledge graph</span><span class=pill>provenance</span><span class=pill>abstention</span><span class=pill>cost-tracked</span>
 </div>
 <div class=bench>Reproducible offline benchmark · 42-question golden set (AI Act · DORA · GDPR · NIS2): <b>retrieval recall@4 98%</b> · <b>citation recall 98%</b> · <b>grounding 0.89</b> <span style="opacity:.7">— higher with production embeddings</span></div>
 <textarea id=q placeholder="e.g. Is social scoring of citizens allowed under the AI Act?"></textarea>
-<div class=row><button id=btn onclick=ask()>Ask</button><button id=btn2 class=secondary onclick=analyze()>Analyze across regulations</button></div>
+<div class=row><button id=btn onclick=ask()>Ask</button><button id=btn2 class=secondary onclick=analyze()>Analyze across regulations</button>
+<select id=lang title="Answer language"><option value=auto>Auto</option><option value=en>English</option><option value=fr>Français</option></select></div>
 <div class=exlbl>Try one:</div>
 <div class=exwrap id=ex></div>
 <div class=card id=out></div>
@@ -165,6 +168,7 @@ const EXAMPLES=[
  "Can a decision about me be made by an algorithm alone under GDPR?",  // third regulation
  "What are the incident reporting deadlines under NIS2?",  // fourth regulation
  "Does our AI credit-scoring system comply with EU law on automated decisions, incident reporting and risk management?",  // multi-reg: use Analyze
+ "Le score social des citoyens est-il autorisé par le règlement IA ?",  // French — set language to Auto/Français
  "What is the best recipe for a chocolate cake?"  // out-of-scope: watch it abstain
 ];
 const exwrap=document.getElementById('ex');
@@ -178,7 +182,7 @@ async function ask(){
   out.style.display='block'; out.innerHTML='<div class=ans>Retrieving, reasoning, checking grounding…</div>';
   btn.disabled=true;
   let d;
-  try{ const r=await fetch('/ask',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({question:q})}); d=await r.json(); }
+  try{ const r=await fetch('/ask',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({question:q,lang:document.getElementById('lang').value})}); d=await r.json(); }
   catch(e){ out.innerHTML='<div class=ans>Network error — please retry.</div>'; btn.disabled=false; return; }
   btn.disabled=false;
 
@@ -208,7 +212,7 @@ async function analyze(){
   out.innerHTML='<div class=ans>Planning sub-questions, answering each across regulations, synthesising…</div>';
   b1.disabled=b2.disabled=true;
   let d;
-  try{ const r=await fetch('/analyze',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({question:q})}); d=await r.json(); }
+  try{ const r=await fetch('/analyze',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({question:q,lang:document.getElementById('lang').value})}); d=await r.json(); }
   catch(e){ out.innerHTML='<div class=ans>Network error — please retry.</div>'; b1.disabled=b2.disabled=false; return; }
   b1.disabled=b2.disabled=false;
 

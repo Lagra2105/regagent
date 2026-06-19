@@ -126,6 +126,17 @@ def test_complex_decomposition(tmp_path):
     assert not a.abstained
 
 
+def test_french_abstention_message(tmp_path):
+    import os, importlib
+    os.environ["AGENTCOST_DB"] = str(tmp_path / "fr.db")
+    import regagent.agent as ag
+    importlib.reload(ag)
+    chunks, store, bm25, graph = _corpus()
+    a = ag.answer_question(store, "Quelle est la meilleure recette de gâteau ?",
+                           graph=graph, bm25=bm25, lang="fr")
+    assert a.abstained and "juridique" in a.answer  # French refusal text
+
+
 def test_abstention_on_out_of_scope(tmp_path):
     import os, importlib
     os.environ["AGENTCOST_DB"] = str(tmp_path / "ab.db")

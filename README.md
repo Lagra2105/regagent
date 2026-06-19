@@ -24,6 +24,7 @@ and you can't audit where an answer came from. RegAgent is built around **trust*
 | **Provenance** | every answer cites the articles it used; a grounding score (lexical *or* semantic) measures how supported it is |
 | **Abstention** | refuses out-of-scope / ungrounded questions — and skips the expensive answer step (≈18× cheaper) |
 | **Multi-regulation analysis** | decomposes a real-world question ("does our system comply?") into focused sub-questions, answers each across regulations, then synthesises — the plan→execute→synthesise agent loop |
+| **Multilingual** | ask in English or French and get the answer in that language; multilingual embeddings retrieve over the English corpus cross-lingually, citations stay language-agnostic |
 | **Measured** | a golden benchmark reports retrieval recall@k, MRR, citation accuracy, grounding |
 | **Costed** | instrumented with [agentcost](https://github.com/Lagra2105/agentcost): real per-step economics, cost-per-*trusted*-answer |
 
