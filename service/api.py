@@ -76,6 +76,32 @@ def ask(body: Ask) -> dict:
     }
 
 
+@app.post("/analyze")
+def analyze(body: Ask) -> dict:
+    """Multi-regulation analysis: decompose → answer each → synthesise."""
+    if not GUARD.allowed():
+        return {"question": body.question,
+                "answer": "The shared demo has reached today's budget limit. "
+                          "Try again tomorrow, or run RegAgent locally with your "
+                          "own OPENAI_API_KEY (see the README).",
+                "sub_answers": [], "sources": [], "abstained": True,
+                "cost_usd": 0.0, "demo_limited": True}
+    from regagent.agent import answer_complex
+    a = answer_complex(_store, body.question, customer=body.customer,
+                       graph=_graph, bm25=_bm25)
+    GUARD.add(a.cost_usd)
+    return {
+        "question": a.question,
+        "answer": a.answer,
+        "sub_answers": [{"question": s.question, "answer": s.answer,
+                         "sources": s.sources, "abstained": s.abstained,
+                         "grounding": s.grounding} for s in a.sub_answers],
+        "sources": a.sources,
+        "abstained": a.abstained,
+        "cost_usd": round(a.cost_usd, 6),
+    }
+
+
 @app.get("/", response_class=HTMLResponse)
 def home() -> str:
     return """<!doctype html><meta charset=utf-8><title>RegAgent — EU AI Act compliance agent</title>
@@ -93,6 +119,12 @@ def home() -> str:
  .row{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
  button{padding:11px 20px;border:0;border-radius:10px;background:var(--brand);color:#fff;font-weight:600;cursor:pointer;font-size:14px}
  button:disabled{opacity:.5;cursor:default}
+ button.secondary{background:#fff;color:var(--brand);border:1px solid var(--brand)}
+ .subq{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:8px 0}
+ .subq .q{font-weight:600;font-size:13.5px;margin-bottom:5px}
+ .subq .a{font-size:13.5px;line-height:1.5;color:#33363d}
+ .synth{border:1px solid var(--brand);background:#faf9ff;border-radius:14px;padding:16px;margin-top:6px}
+ .synth .h{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--brand);margin-bottom:7px}
  .ex{font-size:12.5px;color:var(--muted);border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;cursor:pointer}
  .ex:hover{border-color:var(--brand);color:var(--brand)}
  .exwrap{margin:14px 0 4px;display:flex;gap:8px;flex-wrap:wrap}
@@ -116,7 +148,7 @@ def home() -> str:
 </div>
 <div class=bench>Reproducible offline benchmark · 42-question golden set (AI Act · DORA · GDPR · NIS2): <b>retrieval recall@4 98%</b> · <b>citation recall 98%</b> · <b>grounding 0.89</b> <span style="opacity:.7">— higher with production embeddings</span></div>
 <textarea id=q placeholder="e.g. Is social scoring of citizens allowed under the AI Act?"></textarea>
-<div class=row><button id=btn onclick=ask()>Ask</button></div>
+<div class=row><button id=btn onclick=ask()>Ask</button><button id=btn2 class=secondary onclick=analyze()>Analyze across regulations</button></div>
 <div class=exlbl>Try one:</div>
 <div class=exwrap id=ex></div>
 <div class=card id=out></div>
@@ -128,6 +160,7 @@ const EXAMPLES=[
  "When must a major ICT incident be reported under DORA?",  // second regulation
  "Can a decision about me be made by an algorithm alone under GDPR?",  // third regulation
  "What are the incident reporting deadlines under NIS2?",  // fourth regulation
+ "Does our AI credit-scoring system comply with EU law on automated decisions, incident reporting and risk management?",  // multi-reg: use Analyze
  "What is the best recipe for a chocolate cake?"  // out-of-scope: watch it abstain
 ];
 const exwrap=document.getElementById('ex');
@@ -161,6 +194,37 @@ async function ask(){
     + '<div class=ans>'+d.answer+'</div>'
     + srcs + gsrcs + weak
     + '<div class=meta><span>Grounding <b>'+g+'</b></span><span>Run cost <b>$'+d.cost_usd+'</b></span>'
+    + '<span style="margin-left:auto"><a href="https://github.com/Lagra2105/regagent" target=_blank>source ↗</a></span></div>';
+}
+
+async function analyze(){
+  const q=document.getElementById('q').value.trim(); if(!q)return;
+  const out=document.getElementById('out'), b1=document.getElementById('btn'), b2=document.getElementById('btn2');
+  out.style.display='block';
+  out.innerHTML='<div class=ans>Planning sub-questions, answering each across regulations, synthesising…</div>';
+  b1.disabled=b2.disabled=true;
+  let d;
+  try{ const r=await fetch('/analyze',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({question:q})}); d=await r.json(); }
+  catch(e){ out.innerHTML='<div class=ans>Network error — please retry.</div>'; b1.disabled=b2.disabled=false; return; }
+  b1.disabled=b2.disabled=false;
+
+  let banner = d.abstained
+    ? '<div class="banner b-abs">⚠ Out of scope across all regulations</div>'
+    : '<div class="banner b-ok">✓ Analysed across regulations — '+(d.sub_answers||[]).length+' sub-questions</div>';
+
+  let subs = (d.sub_answers||[]).map(s=>{
+    const tag = s.abstained ? '<span class=g-bad>abstained</span>' : '<span class=g-ok>grounding '+s.grounding+'</span>';
+    const cites = (s.sources&&s.sources.length) ? s.sources.map(x=>'<span class=src>'+x+'</span>').join('') : '';
+    return '<div class=subq><div class=q>'+s.question+'</div><div class=a>'+s.answer+'</div>'
+         + '<div style="margin-top:6px">'+cites+'</div><div class=meta style="border:0;padding:4px 0 0">'+tag+'</div></div>';
+  }).join('');
+
+  let synth = '<div class=synth><div class=h>Synthesised answer</div><div class=ans>'+d.answer+'</div></div>';
+
+  out.innerHTML = banner
+    + '<div class=lbl>Decomposed sub-questions</div>' + subs
+    + synth
+    + '<div class=meta><span>Total run cost <b>$'+d.cost_usd+'</b></span>'
     + '<span style="margin-left:auto"><a href="https://github.com/Lagra2105/regagent" target=_blank>source ↗</a></span></div>';
 }
 </script>"""

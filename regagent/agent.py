@@ -12,6 +12,7 @@ Set OPENAI_API_KEY for real answers; without it, the agent runs in mock mode
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass, field
 
 from agentcost import track, SQLiteSink
@@ -162,3 +163,95 @@ def answer_question(store: DocStore, question: str, customer: str = "demo",
     return Answer(question=question, answer=text, sources=sources,
                   graph_sources=graph_sources, grounding=report.grounding_score,
                   provenance=report, abstained=abstained, cost_usd=cost)
+
+
+# --------------------------------------------------------------------------- #
+# Multi-regulation analysis: the agentic layer.
+#
+# A real compliance question is rarely about one article — it's "does our system
+# comply?", which spans several regulations. answer_complex PLANS (decomposes the
+# question into focused sub-questions), runs each through the full pipeline above,
+# then SYNTHESISES a single grounded answer. The plan/execute/synthesise loop —
+# with the per-sub abstention decisions — is what makes this an agent, not a bot.
+# --------------------------------------------------------------------------- #
+
+@dataclass
+class ComplexAnswer:
+    question: str
+    answer: str                              # synthesised final answer
+    sub_questions: list[str] = field(default_factory=list)
+    sub_answers: list[Answer] = field(default_factory=list)
+    sources: list[str] = field(default_factory=list)   # union of cited articles
+    abstained: bool = False                  # True only if every sub abstained
+    cost_usd: float = 0.0
+
+
+def plan_subquestions(question: str) -> tuple[list[str], dict]:
+    """Decompose a compliance question into focused sub-questions (plan step)."""
+    msg = [
+        {"role": "system", "content":
+         "You are a compliance analyst. Break the user's question into 2 to 4 "
+         "focused, self-contained sub-questions, each targeting a specific "
+         "obligation under the EU AI Act, DORA, GDPR or NIS2. Return ONLY the "
+         "sub-questions, one per line, no numbering or commentary."},
+        {"role": "user", "content": question},
+    ]
+    text, raw = _llm(msg, model="gpt-4o-mini")
+    subs = [ln.strip(" -•\t0123456789.") for ln in text.splitlines()
+            if len(ln.strip()) > 12 and "?" in ln]
+    if not subs:   # mock / empty model output → split on conjunctions
+        parts = re.split(r"\band\b|;|,", question)
+        subs = [p.strip().rstrip("?") + "?" for p in parts if len(p.strip()) > 15] \
+            or [question]
+    return subs[:4], raw
+
+
+def _synthesise(question: str, sub_answers: list[Answer]) -> tuple[str, dict]:
+    """Combine grounded sub-answers into one coherent, cited answer."""
+    blocks = "\n\n".join(
+        f"Sub-question: {sa.question}\nFinding: {sa.answer}\n"
+        f"Articles: {', '.join(sa.sources) or 'none'}" for sa in sub_answers)
+    if not os.environ.get("OPENAI_API_KEY"):   # deterministic mock synthesis
+        body = "\n".join(f"- {sa.question} {' '.join(sa.sources)}" for sa in sub_answers)
+        text = "[mock] Combined analysis across regulations:\n" + body
+        return text, {"model": ANSWER_MODEL,
+                      "usage": {"prompt_tokens": 900, "completion_tokens": 200}}
+    msg = [
+        {"role": "system", "content":
+         "You are a compliance analyst. Using ONLY the findings below (each "
+         "grounded in cited articles), write one coherent answer to the overall "
+         "question. Cite the article labels you rely on. If a sub-question found "
+         "no provision, state that the regulation does not cover it. Be concise."},
+        {"role": "user", "content": f"Overall question: {question}\n\nFindings:\n{blocks}"},
+    ]
+    return _llm(msg, model=ANSWER_MODEL)
+
+
+def answer_complex(store: DocStore, question: str, customer: str = "demo",
+                   graph: KnowledgeGraph | None = None,
+                   bm25: BM25Index | None = None) -> ComplexAnswer:
+    """Plan → run each sub-question through the pipeline → synthesise. Tracked."""
+    with track("reg-analyze", customer=customer, feature="multi-reg-analysis",
+               budget_usd=1.0, sink=SINK) as run:
+        subs, plan_raw = plan_subquestions(question)
+        run.record_response(plan_raw, step="plan")
+
+        sub_answers = [answer_question(store, s, customer=customer,
+                                       graph=graph, bm25=bm25) for s in subs]
+
+        text, syn_raw = _synthesise(question, sub_answers)
+        run.record_response(syn_raw, step="synthesize")
+
+        all_abstained = all(sa.abstained for sa in sub_answers) if sub_answers else True
+        run.mark_failure() if all_abstained else run.mark_success()
+        parent_cost = run.total_cost
+
+    sources: list[str] = []
+    for sa in sub_answers:
+        for s in sa.sources:
+            if s not in sources:
+                sources.append(s)
+    cost = parent_cost + sum(sa.cost_usd for sa in sub_answers)
+    return ComplexAnswer(question=question, answer=text, sub_questions=subs,
+                         sub_answers=sub_answers, sources=sources,
+                         abstained=all_abstained, cost_usd=cost)

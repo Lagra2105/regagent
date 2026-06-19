@@ -23,6 +23,7 @@ and you can't audit where an answer came from. RegAgent is built around **trust*
 | **Knowledge graph** | links articles by shared concepts — within *and across* regulations (AI Act ↔ DORA); pulls in related provisions the vector search misses, and explains the link |
 | **Provenance** | every answer cites the articles it used; a grounding score (lexical *or* semantic) measures how supported it is |
 | **Abstention** | refuses out-of-scope / ungrounded questions — and skips the expensive answer step (≈18× cheaper) |
+| **Multi-regulation analysis** | decomposes a real-world question ("does our system comply?") into focused sub-questions, answers each across regulations, then synthesises — the plan→execute→synthesise agent loop |
 | **Measured** | a golden benchmark reports retrieval recall@k, MRR, citation accuracy, grounding |
 | **Costed** | instrumented with [agentcost](https://github.com/Lagra2105/agentcost): real per-step economics, cost-per-*trusted*-answer |
 
@@ -92,6 +93,7 @@ Config via env: `OPENAI_API_KEY`, `DATABASE_URL` (→ pgvector),
 - [x] FastAPI service, pgvector, Docker
 - [x] Multi-regulation corpus (EU AI Act + DORA + GDPR + NIS2) with cross-regulation graph links
 - [x] Pluggable reranker — lexical default, opt-in cross-encoder (`REGAGENT_RERANK=cross-encoder`)
+- [x] Multi-regulation analysis (`/analyze`) — query decomposition → per-sub answers → synthesis
 - [ ] Full AI Act (113 articles) via `data/ai_act.txt`; Neo4j-backed graph
 - [ ] Hosted demo + multi-tenant access
 

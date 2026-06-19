@@ -109,6 +109,23 @@ def test_graph_links_across_regulations():
     assert any("cross-regulation" in why for _, why in nrelated)
 
 
+def test_complex_decomposition(tmp_path):
+    import os, importlib
+    os.environ["AGENTCOST_DB"] = str(tmp_path / "cx.db")
+    import regagent.agent as ag
+    importlib.reload(ag)
+    chunks, store, bm25, graph = _corpus()
+    a = ag.answer_complex(
+        store,
+        "Does our system comply on automated decisions, incident reporting and risk management?",
+        graph=graph, bm25=bm25)
+    # decomposed into multiple sub-questions, each answered, union of sources spans regs
+    assert len(a.sub_questions) >= 2
+    assert len(a.sub_answers) == len(a.sub_questions)
+    assert a.sources and a.cost_usd > 0
+    assert not a.abstained
+
+
 def test_abstention_on_out_of_scope(tmp_path):
     import os, importlib
     os.environ["AGENTCOST_DB"] = str(tmp_path / "ab.db")
