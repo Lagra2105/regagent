@@ -23,6 +23,16 @@ from service.guard import GUARD
 
 app = FastAPI(title="RegAgent", version="0.1.0")
 
+# Embed the agentcost cost dashboard at /dashboard — it reads the same SQLite the
+# agent writes its per-run costs to (AGENTCOST_DB), so the demo shows RegAgent's
+# real economics live. This is the dogfooding loop made visible.
+try:
+    from agentcost.dashboard import app as _cost_dashboard
+    app.mount("/dashboard", _cost_dashboard)
+except Exception as _e:  # don't take the API down if the dashboard can't mount
+    import sys
+    print(f"[regagent] cost dashboard not mounted: {_e}", file=sys.stderr)
+
 # Build the knowledge base once. Use pgvector if DATABASE_URL is set (scales,
 # survives restarts), otherwise the in-memory store (zero-setup dev).
 _chunks = (load_corpus("data/ai_act.txt") + load_dora()
@@ -153,6 +163,7 @@ def home() -> str:
  <span class=pill>hybrid retrieval</span><span class=pill>knowledge graph</span><span class=pill>provenance</span><span class=pill>abstention</span><span class=pill>cost-tracked</span>
 </div>
 <div class=bench>Reproducible offline benchmark · 42-question golden set (AI Act · DORA · GDPR · NIS2): <b>retrieval recall@4 98%</b> · <b>citation recall 98%</b> · <b>grounding 0.89</b> <span style="opacity:.7">— higher with production embeddings</span></div>
+<div style="margin:-12px 0 20px;font-size:13px"><a href="/dashboard/" style="color:var(--brand);font-weight:600">Live cost dashboard →</a> <span style="color:var(--muted)">· every answer's real per-step economics, tracked by agentcost</span></div>
 <textarea id=q placeholder="e.g. Is social scoring of citizens allowed under the AI Act?"></textarea>
 <div class=row><button id=btn onclick=ask()>Ask</button><button id=btn2 class=secondary onclick=analyze()>Analyze across regulations</button>
 <select id=lang title="Answer language"><option value=auto>Auto</option><option value=en>English</option><option value=fr>Français</option></select></div>
