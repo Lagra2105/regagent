@@ -119,57 +119,102 @@ def analyze(body: Ask) -> dict:
 
 @app.get("/", response_class=HTMLResponse)
 def home() -> str:
-    return """<!doctype html><meta charset=utf-8><title>RegAgent — EU AI Act compliance agent</title>
+    return """<!doctype html><html lang=en><head><meta charset=utf-8>
+<title>RegAgent — EU compliance agent (AI Act · DORA · GDPR · NIS2)</title>
 <meta name=viewport content="width=device-width,initial-scale=1">
+<link rel=preconnect href="https://fonts.googleapis.com">
+<link rel=preconnect href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel=stylesheet>
 <style>
- :root{--ink:#16181d;--muted:#6b7280;--line:#e8e8ef;--brand:#6d4aff;--brandsoft:#f1f0fb}
+ :root{--bg:#f6f6fb;--surface:#fff;--ink:#171922;--ink2:#3c4049;--muted:#73767f;
+  --line:#ececf3;--brand:#6d4aff;--brand-ink:#5331e0;--brand-soft:#f2f0ff;
+  --ok:#0f9d58;--ok-bg:#e9f8ef;--warn:#b3590a;--warn-bg:#fff5e8;--bad:#e5484d;
+  --info:#1666c8;--info-bg:#eef5ff;
+  --shadow:0 1px 2px rgba(20,21,26,.04),0 10px 34px rgba(23,25,34,.07);--r:14px}
  *{box-sizing:border-box}
- body{font-family:-apple-system,system-ui,Segoe UI,sans-serif;max-width:760px;margin:0 auto;padding:40px 20px 80px;color:var(--ink)}
- h1{font-size:24px;margin:0 0 4px} .sub{color:var(--muted);margin-bottom:8px;line-height:1.5}
- .pill{display:inline-block;font-size:11px;color:var(--brand);background:var(--brandsoft);border-radius:999px;padding:3px 10px;margin:0 6px 0 0}
- .pills{margin:14px 0 10px}
- .bench{font-size:12.5px;color:var(--muted);background:#fafafe;border:1px solid var(--line);border-radius:10px;padding:9px 13px;margin:0 0 22px}
- .bench b{color:var(--ink)}
- textarea{width:100%;height:74px;padding:13px;border:1px solid var(--line);border-radius:12px;font:inherit;resize:vertical}
- .row{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
- button{padding:11px 20px;border:0;border-radius:10px;background:var(--brand);color:#fff;font-weight:600;cursor:pointer;font-size:14px}
- button:disabled{opacity:.5;cursor:default}
- button.secondary{background:#fff;color:var(--brand);border:1px solid var(--brand)}
- .subq{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:8px 0}
- .subq .q{font-weight:600;font-size:13.5px;margin-bottom:5px}
- .subq .a{font-size:13.5px;line-height:1.5;color:#33363d}
- .synth{border:1px solid var(--brand);background:#faf9ff;border-radius:14px;padding:16px;margin-top:6px}
- .synth .h{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--brand);margin-bottom:7px}
- .ex{font-size:12.5px;color:var(--muted);border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;cursor:pointer}
- .ex:hover{border-color:var(--brand);color:var(--brand)}
- select#lang{padding:10px;border:1px solid var(--line);border-radius:10px;font:inherit;background:#fff;cursor:pointer}
- .exwrap{margin:14px 0 4px;display:flex;gap:8px;flex-wrap:wrap}
- .exlbl{font-size:12px;color:var(--muted);margin:18px 0 2px}
- .card{margin-top:22px;border:1px solid var(--line);border-radius:16px;padding:20px;display:none}
- .ans{font-size:15.5px;line-height:1.6;white-space:pre-wrap}
- .banner{border-radius:10px;padding:10px 13px;font-size:13.5px;margin:0 0 14px;font-weight:600}
- .b-ok{background:#eafaf1;color:#0f7a43}.b-abs{background:#fff4e5;color:#b3590a}
- .lbl{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:16px 0 7px}
- .src{display:inline-block;background:var(--brandsoft);color:#5b3df5;border-radius:999px;padding:3px 11px;margin:0 5px 5px 0;font-size:12.5px}
- .gsrc{background:#eef6ff;color:#1666c8}
- .weak{font-size:13px;color:#b3590a;background:#fff7ed;border-left:3px solid #f0a35e;padding:7px 11px;border-radius:0 8px 8px 0;margin:5px 0}
- .meta{color:var(--muted);font-size:13px;margin-top:16px;border-top:1px solid var(--line);padding-top:12px;display:flex;gap:18px;flex-wrap:wrap}
- .meta b{color:var(--ink)} .g-ok{color:#0f9d58}.g-bad{color:#e5484d}
+ html,body{margin:0}
+ body{font-family:Inter,-apple-system,system-ui,Segoe UI,sans-serif;color:var(--ink);
+  line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh;
+  background:radial-gradient(1100px 460px at 50% -160px,#ece6ff 0,rgba(236,230,255,0) 72%),var(--bg)}
+ .wrap{max-width:780px;margin:0 auto;padding:52px 22px 96px}
+ .hero{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+ .badge{width:48px;height:48px;border-radius:13px;background:var(--brand-soft);flex:none;
+  display:flex;align-items:center;justify-content:center;font-size:24px;
+  box-shadow:inset 0 0 0 1px rgba(109,74,255,.14)}
+ h1{font-size:27px;font-weight:700;letter-spacing:-.02em;margin:0}
+ .tag{color:var(--muted);font-size:13.5px;font-weight:500;margin-top:2px}
+ .lede{color:var(--ink2);font-size:15.5px;margin:0 0 18px;max-width:66ch}
+ .pills{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:20px}
+ .pill{font-size:11.5px;font-weight:500;color:var(--brand-ink);background:var(--brand-soft);border-radius:999px;padding:5px 11px}
+ .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:11px}
+ .stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 14px}
+ .stat b{display:block;font-size:21px;font-weight:700;letter-spacing:-.01em}
+ .stat span{font-size:11.5px;color:var(--muted)}
+ .benchnote{font-size:12.5px;color:var(--muted);margin:0 0 26px}
+ .benchnote a{color:var(--brand);font-weight:600;text-decoration:none}
+ .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--shadow)}
+ textarea{width:100%;min-height:78px;padding:12px;border:1px solid var(--line);border-radius:11px;
+  font:inherit;color:var(--ink);resize:vertical;outline:none;transition:border-color .15s,box-shadow .15s}
+ textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(109,74,255,.13)}
+ .toolbar{display:flex;align-items:center;gap:10px;margin-top:11px;flex-wrap:wrap}
+ .btns{display:flex;gap:9px;flex-wrap:wrap}
+ button{font-family:inherit;padding:11px 18px;border:0;border-radius:10px;background:var(--brand);
+  color:#fff;font-weight:600;font-size:14px;cursor:pointer;transition:filter .15s,transform .05s}
+ button:hover{filter:brightness(1.06)} button:active{transform:translateY(1px)}
+ button:disabled{opacity:.5;cursor:default;filter:none}
+ button.secondary{background:#fff;color:var(--brand-ink);box-shadow:inset 0 0 0 1px var(--line)}
+ button.secondary:hover{box-shadow:inset 0 0 0 1px var(--brand)}
+ select#lang{margin-left:auto;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;background:#fff;color:var(--ink);cursor:pointer}
+ .exlbl{font-size:12px;font-weight:600;color:var(--muted);margin:22px 0 9px;text-transform:uppercase;letter-spacing:.05em}
+ .exwrap{display:flex;flex-wrap:wrap;gap:8px}
+ .ex{font-size:12.5px;color:var(--ink2);border:1px solid var(--line);background:var(--surface);
+  border-radius:999px;padding:7px 13px;cursor:pointer;transition:.15s}
+ .ex:hover{border-color:var(--brand);color:var(--brand-ink);background:var(--brand-soft)}
+ .card{margin-top:24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px;display:none;box-shadow:var(--shadow)}
+ .ans{font-size:15.5px;line-height:1.65;color:var(--ink);white-space:pre-wrap}
+ .banner{display:inline-block;border-radius:9px;padding:8px 13px;font-size:13px;font-weight:600;margin-bottom:15px}
+ .b-ok{background:var(--ok-bg);color:var(--ok)} .b-abs{background:var(--warn-bg);color:var(--warn)}
+ .lbl{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px}
+ .src{display:inline-block;background:var(--brand-soft);color:var(--brand-ink);border-radius:999px;padding:4px 11px;margin:0 6px 6px 0;font-size:12.5px;font-weight:500}
+ .gsrc{background:var(--info-bg);color:var(--info)}
+ .weak{font-size:13px;color:var(--warn);background:var(--warn-bg);border-radius:9px;padding:8px 12px;margin:6px 0}
+ .subq{border:1px solid var(--line);border-radius:12px;padding:14px 15px;margin:9px 0;background:#fcfcfe}
+ .subq .q{font-weight:600;font-size:14px;margin-bottom:6px}
+ .subq .a{font-size:13.5px;line-height:1.55;color:var(--ink2)}
+ .synth{border:1px solid var(--brand);background:var(--brand-soft);border-radius:13px;padding:17px;margin-top:8px}
+ .synth .h{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--brand-ink);margin-bottom:8px}
+ .meta{display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);font-size:13px;margin-top:18px;padding-top:13px;border-top:1px solid var(--line)}
+ .meta b{color:var(--ink)} .g-ok{color:var(--ok);font-weight:600} .g-bad{color:var(--bad);font-weight:600}
+ .foot{margin-top:30px;color:var(--muted);font-size:12.5px;text-align:center}
  a{color:var(--brand)}
-</style>
-<h1>🛡️ RegAgent</h1>
-<div class=sub>A compliance agent for EU regulation — <b>EU AI Act</b>, <b>DORA</b>, <b>GDPR</b> &amp; <b>NIS2</b>. Every answer is grounded in the exact articles, scored for how well it's supported, and refused when the regulation doesn't cover it — because in compliance a confident wrong answer is worse than none. Ask in English or French (set the language on the right).</div>
+ @media(max-width:560px){.stats{grid-template-columns:repeat(2,1fr)}select#lang{margin-left:0}}
+</style></head><body><div class=wrap>
+<header class=hero><div class=badge>🛡️</div><div>
+ <h1>RegAgent</h1>
+ <div class=tag>EU compliance agent · AI Act · DORA · GDPR · NIS2</div>
+</div></header>
+<p class=lede>Grounded answers with exact article citations, a confidence score, and an honest refusal when the regulation doesn't cover the question — because in compliance a confident wrong answer is worse than none. Ask in English or French.</p>
 <div class=pills>
- <span class=pill>hybrid retrieval</span><span class=pill>knowledge graph</span><span class=pill>provenance</span><span class=pill>abstention</span><span class=pill>cost-tracked</span>
+ <span class=pill>hybrid retrieval</span><span class=pill>knowledge graph</span><span class=pill>provenance</span><span class=pill>abstention</span><span class=pill>multi-regulation</span><span class=pill>cost-tracked</span>
 </div>
-<div class=bench>Reproducible offline benchmark · 42-question golden set (AI Act · DORA · GDPR · NIS2): <b>retrieval recall@4 98%</b> · <b>citation recall 98%</b> · <b>grounding 0.89</b> <span style="opacity:.7">— higher with production embeddings</span></div>
-<div style="margin:-12px 0 20px;font-size:13px"><a href="/dashboard/" style="color:var(--brand);font-weight:600">Live cost dashboard →</a> <span style="color:var(--muted)">· every answer's real per-step economics, tracked by agentcost</span></div>
-<textarea id=q placeholder="e.g. Is social scoring of citizens allowed under the AI Act?"></textarea>
-<div class=row><button id=btn onclick=ask()>Ask</button><button id=btn2 class=secondary onclick=analyze()>Analyze across regulations</button>
-<select id=lang title="Answer language"><option value=auto>Auto</option><option value=en>English</option><option value=fr>Français</option></select></div>
-<div class=exlbl>Try one:</div>
+<div class=stats>
+ <div class=stat><b>98%</b><span>retrieval recall@4</span></div>
+ <div class=stat><b>98%</b><span>citation recall</span></div>
+ <div class=stat><b>0.89</b><span>grounding</span></div>
+ <div class=stat><b>4</b><span>regulations</span></div>
+</div>
+<div class=benchnote>Reproducible offline benchmark · 42-question golden set — higher with production embeddings. <a href="/dashboard/">Live cost dashboard →</a></div>
+<div class=panel>
+ <textarea id=q placeholder="Ask a compliance question — e.g. Is social scoring of citizens allowed under the AI Act?"></textarea>
+ <div class=toolbar>
+  <div class=btns><button id=btn onclick=ask()>Ask</button><button id=btn2 class=secondary onclick=analyze()>Analyze across regulations</button></div>
+  <select id=lang title="Answer language"><option value=auto>Auto</option><option value=en>English</option><option value=fr>Français</option></select>
+ </div>
+</div>
+<div class=exlbl>Try one</div>
 <div class=exwrap id=ex></div>
 <div class=card id=out></div>
+<div class=foot>Built by a Senior Data Scientist / MLOps engineer · <a href="https://github.com/Lagra2105/regagent" target=_blank>source on GitHub</a> · instrumented by agentcost</div>
 <script>
 const EXAMPLES=[
  "Is social scoring of citizens allowed under the AI Act?",
@@ -246,4 +291,4 @@ async function analyze(){
     + '<div class=meta><span>Total run cost <b>$'+d.cost_usd+'</b></span>'
     + '<span style="margin-left:auto"><a href="https://github.com/Lagra2105/regagent" target=_blank>source ↗</a></span></div>';
 }
-</script>"""
+</script></div></body></html>"""
