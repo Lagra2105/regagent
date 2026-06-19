@@ -44,7 +44,11 @@ class Ask(BaseModel):
 
 @app.get("/healthz")
 def healthz() -> dict:
-    return {"ok": True, "chunks": len(_store.chunks), "spend": GUARD.status()}
+    # openai_key_detected: lets us confirm the secret reached the app (the key
+    # itself is never exposed — only whether it's present).
+    return {"ok": True, "chunks": len(_store.chunks),
+            "openai_key_detected": bool(os.environ.get("OPENAI_API_KEY")),
+            "spend": GUARD.status()}
 
 
 @app.post("/ask")
