@@ -126,21 +126,21 @@ def home() -> str:
 <link rel=preconnect href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel=stylesheet>
 <style>
- :root{--bg:#f6f6fb;--surface:#fff;--ink:#171922;--ink2:#3c4049;--muted:#73767f;
-  --line:#ececf3;--brand:#6d4aff;--brand-ink:#5331e0;--brand-soft:#f2f0ff;
-  --ok:#0f9d58;--ok-bg:#e9f8ef;--warn:#b3590a;--warn-bg:#fff5e8;--bad:#e5484d;
-  --info:#1666c8;--info-bg:#eef5ff;
-  --shadow:0 1px 2px rgba(20,21,26,.04),0 10px 34px rgba(23,25,34,.07);--r:14px}
+ :root{--bg:#f3f5f8;--surface:#fff;--ink:#0f1827;--ink2:#33415a;--muted:#647088;
+  --line:#e2e7ee;--brand:#2b5278;--brand-ink:#1f3d5a;--brand-soft:#eef2f7;
+  --ok:#0f7b52;--ok-bg:#e7f4ee;--warn:#8a571c;--warn-bg:#f9f2e6;--bad:#c2453f;
+  --info:#2563eb;--info-bg:#eef3fb;
+  --shadow:0 1px 2px rgba(15,23,42,.05),0 10px 30px rgba(15,23,42,.07);--r:12px}
  *{box-sizing:border-box}
  html,body{margin:0}
  body{font-family:Inter,-apple-system,system-ui,Segoe UI,sans-serif;color:var(--ink);
   line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh;
-  background:radial-gradient(1100px 460px at 50% -160px,#ece6ff 0,rgba(236,230,255,0) 72%),var(--bg)}
+  background:radial-gradient(1100px 460px at 50% -160px,#e4ebf3 0,rgba(228,235,243,0) 72%),var(--bg)}
  .wrap{max-width:780px;margin:0 auto;padding:52px 22px 96px}
  .hero{display:flex;align-items:center;gap:14px;margin-bottom:18px}
  .badge{width:48px;height:48px;border-radius:13px;background:var(--brand-soft);flex:none;
   display:flex;align-items:center;justify-content:center;font-size:24px;
-  box-shadow:inset 0 0 0 1px rgba(109,74,255,.14)}
+  box-shadow:inset 0 0 0 1px rgba(43,82,120,.16)}
  h1{font-size:27px;font-weight:700;letter-spacing:-.02em;margin:0}
  .tag{color:var(--muted);font-size:13.5px;font-weight:500;margin-top:2px}
  .lede{color:var(--ink2);font-size:15.5px;margin:0 0 18px;max-width:66ch}
@@ -155,7 +155,7 @@ def home() -> str:
  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--shadow)}
  textarea{width:100%;min-height:78px;padding:12px;border:1px solid var(--line);border-radius:11px;
   font:inherit;color:var(--ink);resize:vertical;outline:none;transition:border-color .15s,box-shadow .15s}
- textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(109,74,255,.13)}
+ textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(43,82,120,.15)}
  .toolbar{display:flex;align-items:center;gap:10px;margin-top:11px;flex-wrap:wrap}
  .btns{display:flex;gap:9px;flex-wrap:wrap}
  button{font-family:inherit;padding:11px 18px;border:0;border-radius:10px;background:var(--brand);
