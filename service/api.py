@@ -126,51 +126,61 @@ def home() -> str:
 <link rel=preconnect href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel=stylesheet>
 <style>
- :root{--bg:#f3f5f8;--surface:#fff;--ink:#0f1827;--ink2:#33415a;--muted:#647088;
-  --line:#e2e7ee;--brand:#2b5278;--brand-ink:#1f3d5a;--brand-soft:#eef2f7;
-  --ok:#0f7b52;--ok-bg:#e7f4ee;--warn:#8a571c;--warn-bg:#f9f2e6;--bad:#c2453f;
-  --info:#2563eb;--info-bg:#eef3fb;
-  --shadow:0 1px 2px rgba(15,23,42,.05),0 10px 30px rgba(15,23,42,.07);--r:12px}
+ :root{--bg:#e9edf2;--surface:#fff;--ink:#0f1827;--ink2:#33415a;--muted:#5f6c7e;
+  --line:#cdd5df;--brand:#3f5d7d;--brand-ink:#2b4a68;--brand-soft:#e9eef4;
+  --ok:#0f7b52;--ok-bg:#e6f2ec;--warn:#8a571c;--warn-bg:#f7f0e3;--bad:#bb433d;
+  --info:#2563eb;--info-bg:#eaf0fa;
+  --surface-grad:linear-gradient(180deg,#ffffff 0,#eef1f5 100%);
+  --bevel:inset 0 1px 0 rgba(255,255,255,.85);
+  --shadow:0 1px 2px rgba(15,23,42,.06),0 10px 26px rgba(15,23,42,.08);--r:12px}
  *{box-sizing:border-box}
  html,body{margin:0}
  body{font-family:Inter,-apple-system,system-ui,Segoe UI,sans-serif;color:var(--ink);
   line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh;
-  background:radial-gradient(1100px 460px at 50% -160px,#e4ebf3 0,rgba(228,235,243,0) 72%),var(--bg)}
+  background:linear-gradient(180deg,#eef2f6 0,#dde3ea 100%) fixed}
  .wrap{max-width:780px;margin:0 auto;padding:52px 22px 96px}
  .hero{display:flex;align-items:center;gap:14px;margin-bottom:18px}
- .badge{width:48px;height:48px;border-radius:13px;background:var(--brand-soft);flex:none;
+ .badge{width:48px;height:48px;border-radius:13px;flex:none;
   display:flex;align-items:center;justify-content:center;font-size:24px;
-  box-shadow:inset 0 0 0 1px rgba(43,82,120,.16)}
+  background:radial-gradient(120% 120% at 30% 20%,#93a2b3 0,#637184 55%,#4b5868 100%);
+  border:1px solid #3f4b59;
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.4),inset 0 -2px 5px rgba(0,0,0,.18),0 2px 5px rgba(15,23,42,.22)}
  h1{font-size:27px;font-weight:700;letter-spacing:-.02em;margin:0}
  .tag{color:var(--muted);font-size:13.5px;font-weight:500;margin-top:2px}
  .lede{color:var(--ink2);font-size:15.5px;margin:0 0 18px;max-width:66ch}
  .pills{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:20px}
  .pill{font-size:11.5px;font-weight:500;color:var(--brand-ink);background:var(--brand-soft);border-radius:999px;padding:5px 11px}
  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:11px}
- .stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 14px}
+ .stat{background:var(--surface-grad);border:1px solid var(--line);border-radius:12px;padding:13px 14px;box-shadow:var(--bevel),0 1px 2px rgba(15,23,42,.05)}
  .stat b{display:block;font-size:21px;font-weight:700;letter-spacing:-.01em}
  .stat span{font-size:11.5px;color:var(--muted)}
  .benchnote{font-size:12.5px;color:var(--muted);margin:0 0 26px}
  .benchnote a{color:var(--brand);font-weight:600;text-decoration:none}
- .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--shadow)}
+ .panel{background:var(--surface-grad);border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--bevel),var(--shadow)}
  textarea{width:100%;min-height:78px;padding:12px;border:1px solid var(--line);border-radius:11px;
-  font:inherit;color:var(--ink);resize:vertical;outline:none;transition:border-color .15s,box-shadow .15s}
+  font:inherit;color:var(--ink);resize:vertical;outline:none;transition:border-color .15s,box-shadow .15s;
+  box-shadow:inset 0 1px 2px rgba(15,23,42,.06)}
  textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(43,82,120,.15)}
  .toolbar{display:flex;align-items:center;gap:10px;margin-top:11px;flex-wrap:wrap}
  .btns{display:flex;gap:9px;flex-wrap:wrap}
- button{font-family:inherit;padding:11px 18px;border:0;border-radius:10px;background:var(--brand);
-  color:#fff;font-weight:600;font-size:14px;cursor:pointer;transition:filter .15s,transform .05s}
- button:hover{filter:brightness(1.06)} button:active{transform:translateY(1px)}
+ button{font-family:inherit;padding:11px 18px;border:1px solid #3a4a5b;border-radius:10px;
+  background:linear-gradient(180deg,#5d6e82 0,#46566a 100%);color:#fff;font-weight:600;font-size:14px;
+  cursor:pointer;transition:filter .12s,transform .05s,box-shadow .12s;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 1px 2px rgba(15,23,42,.22)}
+ button:hover{filter:brightness(1.08)}
+ button:active{transform:translateY(1px);box-shadow:inset 0 2px 4px rgba(0,0,0,.28)}
  button:disabled{opacity:.5;cursor:default;filter:none}
- button.secondary{background:#fff;color:var(--brand-ink);box-shadow:inset 0 0 0 1px var(--line)}
- button.secondary:hover{box-shadow:inset 0 0 0 1px var(--brand)}
- select#lang{margin-left:auto;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;background:#fff;color:var(--ink);cursor:pointer}
+ button.secondary{background:linear-gradient(180deg,#fbfcfd 0,#e8edf2 100%);color:var(--brand-ink);
+  border-color:#cbd4de;box-shadow:var(--bevel)}
+ button.secondary:hover{border-color:var(--brand);filter:none}
+ select#lang{margin-left:auto;padding:10px 12px;border:1px solid #cbd4de;border-radius:10px;font:inherit;
+  background:linear-gradient(180deg,#fbfcfd 0,#e8edf2 100%);color:var(--ink);cursor:pointer;box-shadow:var(--bevel)}
  .exlbl{font-size:12px;font-weight:600;color:var(--muted);margin:22px 0 9px;text-transform:uppercase;letter-spacing:.05em}
  .exwrap{display:flex;flex-wrap:wrap;gap:8px}
  .ex{font-size:12.5px;color:var(--ink2);border:1px solid var(--line);background:var(--surface);
   border-radius:999px;padding:7px 13px;cursor:pointer;transition:.15s}
  .ex:hover{border-color:var(--brand);color:var(--brand-ink);background:var(--brand-soft)}
- .card{margin-top:24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px;display:none;box-shadow:var(--shadow)}
+ .card{margin-top:24px;background:var(--surface-grad);border:1px solid var(--line);border-radius:var(--r);padding:22px;display:none;box-shadow:var(--bevel),var(--shadow)}
  .ans{font-size:15.5px;line-height:1.65;color:var(--ink);white-space:pre-wrap}
  .banner{display:inline-block;border-radius:9px;padding:8px 13px;font-size:13px;font-weight:600;margin-bottom:15px}
  .b-ok{background:var(--ok-bg);color:var(--ok)} .b-abs{background:var(--warn-bg);color:var(--warn)}
