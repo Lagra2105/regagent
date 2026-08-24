@@ -26,6 +26,9 @@ from .provenance import score as score_provenance, ProvenanceReport
 
 SINK = SQLiteSink(os.environ.get("AGENTCOST_DB", "regagent.db"))
 ANSWER_MODEL = os.environ.get("REGAGENT_ANSWER_MODEL", "gpt-4o")  # tunable for experiments
+# Cheaper model for the auxiliary calls (routing, verification, decomposition).
+# Defaults to gpt-4o-mini for OpenAI; override for a local/OpenAI-compatible endpoint.
+ROUTER_MODEL = os.environ.get("REGAGENT_ROUTER_MODEL", "gpt-4o-mini")
 # Below this grounding score the agent abstains instead of answering — better a
 # safe "I don't know" than a confident hallucination in a compliance context.
 ABSTAIN_THRESHOLD = float(os.environ.get("REGAGENT_ABSTAIN_THRESHOLD", "0.30"))
@@ -82,7 +85,7 @@ class Answer:
     cost_usd: float = 0.0
 
 
-def _llm(messages: list[dict], model: str = "gpt-4o-mini") -> tuple[str, dict]:
+def _llm(messages: list[dict], model: str = ROUTER_MODEL) -> tuple[str, dict]:
     """Call the LLM, return (text, raw_response). Mock when no API key."""
     if os.environ.get("OPENAI_API_KEY"):
         from openai import OpenAI
@@ -106,7 +109,7 @@ def _llm(messages: list[dict], model: str = "gpt-4o-mini") -> tuple[str, dict]:
 def _route(question: str) -> tuple[str, dict]:
     msg = [{"role": "system", "content": "Classify if this needs the regulation corpus. Answer 'retrieve'."},
            {"role": "user", "content": question}]
-    return _llm(msg, model="gpt-4o-mini")
+    return _llm(msg, model=ROUTER_MODEL)
 
 
 def answer_question(store: DocStore, question: str, customer: str = "demo",
@@ -170,7 +173,7 @@ def answer_question(store: DocStore, question: str, customer: str = "demo",
         # 4) verify the answer is grounded (self-check)
         vmsg = [{"role": "system", "content": "Reply 'ok' if the answer cites the excerpts."},
                 {"role": "user", "content": text}]
-        _, v = _llm(vmsg, model="gpt-4o-mini")
+        _, v = _llm(vmsg, model=ROUTER_MODEL)
         run.record_response(v, step="verify")
 
         # 5) provenance scoring — how well is the answer grounded in the sources?
@@ -226,7 +229,7 @@ def plan_subquestions(question: str, lang: str = "auto") -> tuple[list[str], dic
          "sub-questions, one per line, no numbering or commentary." + _lang_instruction(lang)},
         {"role": "user", "content": question},
     ]
-    text, raw = _llm(msg, model="gpt-4o-mini")
+    text, raw = _llm(msg, model=ROUTER_MODEL)
     subs = [ln.strip(" -•\t0123456789.") for ln in text.splitlines()
             if len(ln.strip()) > 12 and "?" in ln]
     if not subs:   # mock / empty model output → split on conjunctions

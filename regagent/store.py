@@ -37,11 +37,15 @@ def _hash_embedding(text: str, dim: int = 256) -> list[float]:
 
 
 def embed(texts: list[str]) -> list[list[float]]:
-    """Embed a batch. Uses OpenAI text-embedding-3-small if a key is present."""
+    """Embed a batch. When OPENAI_API_KEY is set, use an OpenAI-compatible endpoint
+    (OpenAI, or any local server via OPENAI_BASE_URL — e.g. Ollama on :11434/v1);
+    otherwise a deterministic offline hash-embedding. The model is configurable via
+    REGAGENT_EMBED_MODEL (default text-embedding-3-small; e.g. bge-m3 for local/EN-FR)."""
     if os.environ.get("OPENAI_API_KEY"):
         from openai import OpenAI
         client = OpenAI()
-        resp = client.embeddings.create(model="text-embedding-3-small", input=texts)
+        model = os.environ.get("REGAGENT_EMBED_MODEL", "text-embedding-3-small")
+        resp = client.embeddings.create(model=model, input=texts)
         return [d.embedding for d in resp.data]
     return [_hash_embedding(t) for t in texts]
 
