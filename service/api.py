@@ -19,6 +19,7 @@ from regagent.store import DocStore
 from regagent.sparse import BM25Index
 from regagent.graph import KnowledgeGraph
 from regagent.agent import answer_question
+from regagent.assess import Profile, build_roadmap
 from service.guard import GUARD
 
 app = FastAPI(title="RegAgent", version="0.1.0")
@@ -131,6 +132,58 @@ def analyze(body: Ask, who: str = Depends(tenant)) -> dict:
         "abstained": a.abstained,
         "cost_usd": round(a.cost_usd, 6),
     }
+
+
+class AssessIn(BaseModel):
+    """A startup product profile for the intake → roadmap flow."""
+    description: str = ""
+    uses_ai: bool = False
+    high_risk_area: str = ""      # "" | hiring | credit | biometrics | education | essential | law
+    personal_data: bool = False
+    special_categories: bool = False
+    automated_decisions: bool = False
+    financial_entity: bool = False
+    critical_entity: bool = False
+    eu_market: bool = True
+    lang: str = "en"
+
+
+@app.post("/assess")
+def assess(body: AssessIn, who: str = Depends(tenant)) -> dict:
+    """Startup profile → applicable EU regulations → grounded, actionable roadmap.
+
+    Applicability is deterministic (rules); the obligations + citations come
+    grounded from the corpus via the engine. Decision-support, not legal advice.
+    """
+    if not GUARD.allowed():
+        return {"items": [], "not_applicable": [], "cost_usd": 0.0,
+                "demo_limited": True,
+                "message": "The shared demo has reached today's budget limit. "
+                           "Run RegAgent locally with your own OPENAI_API_KEY (see the README)."}
+    prof = Profile(
+        description=body.description, uses_ai=body.uses_ai,
+        high_risk_area=body.high_risk_area, personal_data=body.personal_data,
+        special_categories=body.special_categories, automated_decisions=body.automated_decisions,
+        financial_entity=body.financial_entity, critical_entity=body.critical_entity,
+        eu_market=body.eu_market,
+    )
+    def ask(q: str, lang: str):
+        return answer_question(_store, q, customer=who, graph=_graph, bm25=_bm25, lang=lang)
+    rm = build_roadmap(prof, ask, lang=body.lang)
+    GUARD.add(rm.cost_usd)
+    return {
+        "items": [{"regulation": i.regulation, "applies_reason": i.applies_reason,
+                   "severity": i.severity, "obligations": i.obligations,
+                   "provisions": i.provisions, "grounded": i.grounded,
+                   "needs_review": i.needs_review} for i in rm.items],
+        "not_applicable": rm.not_applicable,
+        "cost_usd": round(rm.cost_usd, 6),
+    }
+
+
+@app.get("/assess", response_class=HTMLResponse)
+def assess_page() -> str:
+    return _ASSESS_HTML
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -449,3 +502,135 @@ async function analyze(){
     + '<span style="margin-left:auto"><a href="https://github.com/Lagra2105/regagent" target=_blank>source ↗</a></span></div>';
 }
 </script></div></body></html>"""
+
+
+# --- Intake → roadmap page (served at GET /assess) ---------------------------
+_ASSESS_HTML = r"""<!doctype html><html lang=en><head><meta charset=utf-8>
+<title>RegAgent — Assess your startup</title>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#0f172a;--card:#fff;--ink:#0f172a;--mut:#64748b;--line:#e2e8f0;
+ --accent:#2563eb;--hi:#b91c1c;--hibg:#fef2f2;--med:#b45309;--medbg:#fffbeb;--ok:#15803d}
+*{box-sizing:border-box}body{margin:0;background:#f1f5f9;color:var(--ink);
+ font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:820px;margin:0 auto;padding:32px 20px 64px}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.top b{font-size:19px}.top a{margin-left:auto;color:var(--mut);text-decoration:none;font-size:13px}
+h1{font-size:26px;margin:6px 0 4px}.sub{color:var(--mut);margin:0 0 14px}
+.disc{background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;border-radius:10px;
+ padding:10px 13px;font-size:13px;margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 18px;
+ box-shadow:0 1px 2px rgba(15,23,42,.05)}
+label.q{display:block;font-weight:600;margin:14px 0 6px}
+textarea,select{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font:inherit;background:#fff}
+textarea{min-height:76px;resize:vertical}
+.chk{display:flex;gap:9px;align-items:flex-start;margin:9px 0;padding:9px 11px;border:1px solid var(--line);border-radius:9px;cursor:pointer}
+.chk input{margin-top:3px}.chk .t{font-weight:600}.chk .d{color:var(--mut);font-size:13px}
+.sub-opts{margin:6px 0 4px 22px;padding-left:12px;border-left:2px solid var(--line);display:none}
+.row{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-top:16px}
+button{background:var(--accent);color:#fff;border:0;border-radius:9px;padding:11px 20px;font:inherit;font-weight:600;cursor:pointer}
+button:disabled{opacity:.6;cursor:progress}
+#out{margin-top:26px;display:none}
+.item{background:#fff;border:1px solid var(--line);border-left:5px solid var(--line);border-radius:12px;padding:16px 18px;margin:12px 0}
+.item.high{border-left-color:var(--hi)}.item.medium{border-left-color:var(--med)}
+.item h3{margin:0 0 4px;font-size:17px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.03em}
+.badge.high{background:var(--hibg);color:var(--hi)}.badge.medium{background:var(--medbg);color:var(--med)}
+.badge.rev{background:#f1f5f9;color:var(--mut)}
+.reason{color:var(--mut);font-size:13.5px;margin:2px 0 10px}
+.obl{font-size:14px;white-space:pre-wrap}
+.prov{margin:12px 0 0;padding:0;list-style:none}
+.prov li{font:13px ui-monospace,Menlo,monospace;background:#f8fafc;border:1px solid var(--line);
+ border-radius:7px;padding:6px 10px;margin:5px 0;display:flex;gap:8px}
+.prov li::before{content:"§";color:var(--accent);font-weight:700}
+.na{color:var(--mut);font-size:13px;margin-top:16px}
+.meta{color:var(--mut);font-size:12px;margin-top:8px}
+.load{display:none;color:var(--mut);margin-top:16px}
+.foot{color:var(--mut);font-size:12px;margin-top:26px;border-top:1px solid var(--line);padding-top:12px}
+</style></head><body><div class=wrap>
+<div class=top><span style="font-size:22px">🛡️</span><b>RegAgent</b>
+ <a href="/demo">Ask a question →</a></div>
+<h1>Assess your startup</h1>
+<p class=sub>Describe your product. RegAgent identifies which EU regulations apply and builds a grounded, actionable compliance roadmap.</p>
+<div class=disc><b>Decision-support triage, not legal advice.</b> Requirements are grounded in cited articles; confirm with qualified counsel before relying on them.</div>
+
+<div class=card>
+ <label class=q for=desc>Describe your product (a few sentences)</label>
+ <textarea id=desc placeholder="e.g. A SaaS platform that screens job candidates by scoring their CVs with a machine-learning model, for EU employers."></textarea>
+
+ <label class="chk"><input type=checkbox id=uses_ai><span><span class=t>Our product uses AI / ML</span><span class="d"> — models that make predictions, classifications or generate content</span></span></label>
+ <div class=sub-opts id=ai_opts>
+  <label class=q for=hra>What does the AI do? (determines risk tier)</label>
+  <select id=hra>
+   <option value="">Other / general purpose</option>
+   <option value=hiring>Hiring, recruitment or worker management</option>
+   <option value=credit>Credit scoring / creditworthiness</option>
+   <option value=biometrics>Biometric identification</option>
+   <option value=education>Education / exam scoring</option>
+   <option value=essential>Access to essential services (public or private)</option>
+   <option value=law>Law enforcement</option>
+  </select>
+ </div>
+
+ <label class="chk"><input type=checkbox id=pd><span><span class=t>We process personal data</span><span class="d"> — any data about identifiable individuals (names, emails, behaviour…)</span></span></label>
+ <div class=sub-opts id=pd_opts>
+  <label class="chk"><input type=checkbox id=spec><span><span class=t>…including special-category data</span><span class="d"> — health, biometrics, ethnicity, beliefs, etc.</span></span></label>
+  <label class="chk"><input type=checkbox id=auto><span><span class=t>…used for solely-automated decisions about people</span></span></label>
+ </div>
+
+ <label class="chk"><input type=checkbox id=fin><span><span class=t>We are a financial entity</span><span class="d"> — bank, payment, crypto-asset, investment or insurance provider (DORA)</span></span></label>
+ <label class="chk"><input type=checkbox id=crit><span><span class=t>We are an essential / important entity</span><span class="d"> — energy, health, transport, digital infrastructure, etc. (NIS2)</span></span></label>
+
+ <div class=row>
+  <div><label class=q for=lang style="margin-bottom:6px">Language</label>
+   <select id=lang style="width:auto"><option value=en>English</option><option value=fr>Français</option></select></div>
+  <button id=go>Generate compliance roadmap →</button>
+ </div>
+ <div class=load id=load>Analysing across regulations… grounding each requirement in the corpus. This can take ~20 s locally.</div>
+</div>
+
+<div id=out></div>
+<div class=foot>RegAgent · EU AI Act · DORA · GDPR · NIS2 — grounded, with honest abstention. Not legal advice.</div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+$('uses_ai').onchange=e=>$('ai_opts').style.display=e.target.checked?'block':'none';
+$('pd').onchange=e=>$('pd_opts').style.display=e.target.checked?'block':'none';
+$('go').onclick=async()=>{
+ const btn=$('go'); btn.disabled=true; $('load').style.display='block'; $('out').style.display='none';
+ const body={description:$('desc').value,uses_ai:$('uses_ai').checked,
+  high_risk_area:$('uses_ai').checked?$('hra').value:'',personal_data:$('pd').checked,
+  special_categories:$('pd').checked&&$('spec').checked,automated_decisions:$('pd').checked&&$('auto').checked,
+  financial_entity:$('fin').checked,critical_entity:$('crit').checked,eu_market:true,lang:$('lang').value};
+ try{
+  const r=await fetch('/assess',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json(); render(d);
+ }catch(err){$('out').innerHTML='<div class=card>Error: '+err+'</div>';$('out').style.display='block';}
+ btn.disabled=false; $('load').style.display='none';
+};
+function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function render(d){
+ const o=$('out');
+ if(d.demo_limited){o.innerHTML='<div class=card>'+esc(d.message)+'</div>';o.style.display='block';return;}
+ if(!d.items||!d.items.length){o.innerHTML='<div class=card>No EU regulation flagged from the profile given. Add more detail (AI use, personal data, sector).</div>';o.style.display='block';return;}
+ let h='<h2 style="margin:8px 0 2px">Compliance roadmap</h2>'+
+   '<p class=sub>'+d.items.length+' applicable regulation(s), highest priority first.</p>';
+ for(const it of d.items){
+  const sev=it.severity==='high'?'high':'medium';
+  h+='<div class="item '+sev+'"><h3>'+esc(it.regulation)+
+     ' <span class="badge '+sev+'">'+sev+'</span>'+
+     (it.needs_review?' <span class="badge rev">needs legal review</span>':'')+'</h3>'+
+     '<div class=reason>'+esc(it.applies_reason)+'</div>'+
+     '<div class=obl>'+esc(it.obligations)+'</div>';
+  if(it.provisions&&it.provisions.length){
+   h+='<ul class=prov>'+it.provisions.map(p=>'<li>'+esc(p)+'</li>').join('')+'</ul>';
+  }
+  h+='</div>';
+ }
+ if(d.not_applicable&&d.not_applicable.length)
+  h+='<div class=na>Not flagged from this profile: '+d.not_applicable.map(esc).join(', ')+
+     ' — revisit if your product or sector changes.</div>';
+ h+='<div class=meta>Run cost: $'+(d.cost_usd||0)+' · grounded in cited articles · decision-support, not legal advice.</div>';
+ o.innerHTML=h; o.style.display='block'; o.scrollIntoView({behavior:'smooth'});
+}
+</script></body></html>"""
