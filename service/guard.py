@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import os
 import threading
+import time
+from collections import deque
 from datetime import datetime, timezone
 
 
@@ -52,3 +54,44 @@ class DailySpendGuard:
 
 
 GUARD = DailySpendGuard(float(os.environ.get("REGAGENT_DAILY_USD_CAP", "0") or 0))
+
+
+class RateLimiter:
+    """Per-key (per-IP) sliding-window rate limit for the public demo.
+
+    The daily $ cap protects the total budget; this stops a single visitor or
+    bot from draining that whole budget in a burst (and blocking everyone else).
+    In-process and best-effort — fine for one free-tier instance.
+    """
+
+    def __init__(self, max_requests: int, window_seconds: int):
+        self.max = max_requests
+        self.window = window_seconds
+        self._hits: dict[str, deque] = {}
+        self._lock = threading.Lock()
+
+    def allow(self, key: str) -> bool:
+        if self.max <= 0:                      # 0/negative = disabled
+            return True
+        now = time.monotonic()
+        cutoff = now - self.window
+        with self._lock:
+            dq = self._hits.get(key)
+            if dq is None:
+                dq = self._hits[key] = deque()
+            while dq and dq[0] <= cutoff:
+                dq.popleft()
+            if len(dq) >= self.max:
+                return False
+            dq.append(now)
+            # Bound memory: drop empty buckets occasionally.
+            if len(self._hits) > 5000:
+                self._hits = {k: v for k, v in self._hits.items() if v and v[-1] > cutoff}
+            return True
+
+
+# Default: 20 requests per 10 minutes per IP (override via env).
+RATE = RateLimiter(
+    int(os.environ.get("REGAGENT_RATE_MAX", "20") or 0),
+    int(os.environ.get("REGAGENT_RATE_WINDOW", "600") or 600),
+)

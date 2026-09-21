@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import os
 
-from fastapi import FastAPI, Header, HTTPException, Depends
+from fastapi import FastAPI, Header, HTTPException, Depends, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
@@ -20,7 +20,7 @@ from regagent.sparse import BM25Index
 from regagent.graph import KnowledgeGraph
 from regagent.agent import answer_question
 from regagent.assess import Profile, build_roadmap
-from service.guard import GUARD
+from service.guard import GUARD, RATE
 
 app = FastAPI(title="RegAgent", version="0.1.0")
 
@@ -70,6 +70,24 @@ def tenant(x_api_key: str | None = Header(default=None)) -> str:
     return x_api_key or "demo"   # open mode: no key required
 
 
+def _client_ip(request: Request) -> str:
+    """Best-effort client IP, honouring Render's proxy X-Forwarded-For."""
+    xff = request.headers.get("x-forwarded-for")
+    if xff:
+        return xff.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def rate_limit(request: Request) -> None:
+    """Per-IP burst guard for the public demo (429 when exceeded)."""
+    if not RATE.allow(_client_ip(request)):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many requests from your address. Please slow down and "
+                   "try again shortly.",
+        )
+
+
 @app.get("/healthz")
 def healthz() -> dict:
     # openai_key_detected: lets us confirm the secret reached the app (the key
@@ -79,7 +97,7 @@ def healthz() -> dict:
             "spend": GUARD.status()}
 
 
-@app.post("/ask")
+@app.post("/ask", dependencies=[Depends(rate_limit)])
 def ask(body: Ask, who: str = Depends(tenant)) -> dict:
     # Public-demo budget guard: stop calling the model once the daily cap is hit.
     if not GUARD.allowed():
@@ -108,7 +126,7 @@ def ask(body: Ask, who: str = Depends(tenant)) -> dict:
     }
 
 
-@app.post("/analyze")
+@app.post("/analyze", dependencies=[Depends(rate_limit)])
 def analyze(body: Ask, who: str = Depends(tenant)) -> dict:
     """Multi-regulation analysis: decompose → answer each → synthesise."""
     if not GUARD.allowed():
@@ -148,7 +166,7 @@ class AssessIn(BaseModel):
     lang: str = "en"
 
 
-@app.post("/assess")
+@app.post("/assess", dependencies=[Depends(rate_limit)])
 def assess(body: AssessIn, who: str = Depends(tenant)) -> dict:
     """Startup profile → applicable EU regulations → grounded, actionable roadmap.
 
