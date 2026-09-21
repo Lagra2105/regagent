@@ -438,6 +438,111 @@ def _chunk_text(text: str, source: str, regulation: str = "",
             for i, p in enumerate(parts)]
 
 
+# MiCA — Regulation (EU) 2023/1114 on Markets in Crypto-Assets. Abridged key
+# provisions for the crypto / web3 vertical. Rich cross-links: crypto-asset
+# service providers are financial entities under DORA (ICT risk, operational
+# resilience, third-party risk); white papers and client onboarding touch GDPR
+# personal data; CASPs carry AML/CFT duties (Transfer of Funds Regulation
+# "travel rule"). Enters application in phases through 2024-2025.
+MICA = [
+    ("MiCA — Article 3 (Definitions)",
+     "Defines the key terms: 'crypto-asset' means a digital representation of a "
+     "value or a right that can be transferred and stored electronically using "
+     "distributed ledger technology; 'asset-referenced token' (ART) and "
+     "'e-money token' (EMT) are stablecoin categories; a 'crypto-asset service "
+     "provider' (CASP) is a legal person whose occupation is providing crypto-asset "
+     "services on a professional basis."),
+    ("MiCA — Article 4 (Offer to the public of crypto-assets other than ART/EMT)",
+     "A person offering crypto-assets other than asset-referenced or e-money tokens "
+     "to the public in the Union shall be a legal person, draw up and publish a "
+     "crypto-asset white paper, notify it to the competent authority, and act "
+     "honestly, fairly and professionally, communicating in a fair, clear and "
+     "not misleading manner."),
+    ("MiCA — Article 6 (Crypto-asset white paper)",
+     "The white paper shall contain fair, clear and not-misleading information: a "
+     "description of the issuer and the project, the rights and obligations attached "
+     "to the crypto-asset, the underlying technology, and the risks. It shall not "
+     "contain assertions on future value other than permitted disclaimers, and where "
+     "personal data is processed it must comply with EU data protection law."),
+    ("MiCA — Article 7 (Marketing communications)",
+     "Marketing communications relating to an offer to the public shall be clearly "
+     "identifiable as such, be fair, clear and not misleading, and be consistent "
+     "with the crypto-asset white paper. They must state that a white paper has been "
+     "published and give its address."),
+    ("MiCA — Article 16 (Authorisation of issuers of asset-referenced tokens)",
+     "No asset-referenced token shall be offered to the public or admitted to "
+     "trading in the Union unless its issuer is authorised for that purpose and is a "
+     "legal person established in the Union, or is a credit institution. Authorisation "
+     "requires a governance framework, own funds and a reserve of assets."),
+    ("MiCA — Article 36 (Reserve of assets for asset-referenced tokens)",
+     "Issuers of asset-referenced tokens shall constitute and maintain at all times a "
+     "reserve of assets fully backing the tokens. The reserve shall be segregated "
+     "from the issuer's own assets, held in custody, composed of low-risk assets, and "
+     "managed to cover the risks reflected in the referenced assets so holders can "
+     "always exercise their redemption rights."),
+    ("MiCA — Article 48 (Requirements for issuers of e-money tokens)",
+     "An e-money token shall only be offered to the public or admitted to trading if "
+     "its issuer is authorised as a credit institution or an electronic money "
+     "institution, publishes a crypto-asset white paper, and grants holders a claim "
+     "against the issuer."),
+    ("MiCA — Article 49 (Issuance and redeemability of e-money tokens)",
+     "E-money tokens shall be issued at par value on receipt of funds and, on request "
+     "of the holder, redeemed at any moment and at par value by the issuer. No "
+     "interest shall be granted in relation to e-money tokens."),
+    ("MiCA — Article 59 (Authorisation of crypto-asset service providers)",
+     "Crypto-asset services shall be provided only by legal persons or undertakings "
+     "authorised as crypto-asset service providers, with a registered office and "
+     "effective management in a Member State. Authorisation specifies the services "
+     "the CASP may provide and may be passported across the Union."),
+    ("MiCA — Article 66 (Obligation to act honestly, fairly and professionally)",
+     "Crypto-asset service providers shall act honestly, fairly and professionally in "
+     "the best interests of their clients, provide fair, clear and not-misleading "
+     "information including on risks, and make public their pricing, costs and "
+     "charges."),
+    ("MiCA — Article 67 (Prudential requirements for CASPs)",
+     "Crypto-asset service providers shall have in place prudential safeguards equal "
+     "to the higher of a permanent minimum capital requirement depending on the "
+     "services provided, or one quarter of the fixed overheads of the preceding year, "
+     "held as own funds or an insurance policy."),
+    ("MiCA — Article 68 (Governance arrangements)",
+     "Members of the management body of a CASP shall be of good repute and possess "
+     "adequate knowledge, skills and experience. CASPs shall employ sound "
+     "administrative and accounting procedures, resilient ICT systems and security "
+     "arrangements consistent with digital operational resilience requirements, "
+     "business continuity, and effective anti-money-laundering controls."),
+    ("MiCA — Article 70 (Safekeeping of clients' crypto-assets and funds)",
+     "Crypto-asset service providers holding clients' crypto-assets or funds shall "
+     "make adequate arrangements to safeguard clients' ownership rights, segregate "
+     "clients' holdings from their own, prevent the use of client assets for their own "
+     "account, and hold client funds with a credit institution or central bank."),
+    ("MiCA — Article 75 (Custody and administration of crypto-assets)",
+     "Providers of custody and administration of crypto-assets on behalf of clients "
+     "shall conclude a written agreement, keep a register of positions, establish a "
+     "custody policy, segregate holdings, and are liable to clients for loss of "
+     "crypto-assets or of the means of access resulting from an incident attributable "
+     "to the provider."),
+    ("MiCA — Article 76 (Operation of a trading platform for crypto-assets)",
+     "Operators of a trading platform shall set clear operating rules, admit only "
+     "crypto-assets with a published white paper where required, ensure fair and "
+     "orderly trading, maintain resilient systems with adequate capacity, publish "
+     "transparent pricing, and keep records to enable market-abuse monitoring."),
+    ("MiCA — Article 88 (Public disclosure of inside information)",
+     "Issuers and offerors of crypto-assets shall inform the public as soon as "
+     "possible of inside information that directly concerns them, in a manner enabling "
+     "fast access and complete, correct and timely assessment by the public; "
+     "disclosure may be delayed under conditions to protect legitimate interests."),
+    ("MiCA — Article 89 (Prohibition of insider dealing)",
+     "A person in possession of inside information relating to crypto-assets shall not "
+     "use it by acquiring or disposing of those crypto-assets, cancelling or amending "
+     "an order, or recommending that another person engage in such dealing."),
+    ("MiCA — Article 91 (Prohibition of market manipulation)",
+     "Market manipulation, including entering transactions or orders or disseminating "
+     "information that gives false or misleading signals as to the supply, demand or "
+     "price of a crypto-asset, or securing the price at an abnormal or artificial "
+     "level, is prohibited."),
+]
+
+
 def _load(entries: list[tuple[str, str]], regulation: str) -> list[Chunk]:
     chunks: list[Chunk] = []
     for source, text in entries:
@@ -463,11 +568,14 @@ def load_gdpr() -> list[Chunk]:
 def load_nis2() -> list[Chunk]:
     """The built-in NIS2 corpus."""
     return _load(NIS2, "NIS2")
+def load_mica() -> list[Chunk]:
+    """The built-in MiCA corpus (crypto-assets)."""
+    return _load(MICA, "MiCA")
 
 
 def load_all() -> list[Chunk]:
     """All built-in regulations — multi-regulation corpus for the demo."""
-    return load_sample() + load_dora() + load_gdpr() + load_nis2()
+    return load_sample() + load_dora() + load_gdpr() + load_nis2() + load_mica()
 
 
 def load_corpus(path: str, regulation: str = "EU AI Act") -> list[Chunk]:

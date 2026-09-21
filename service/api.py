@@ -14,7 +14,7 @@ from fastapi import FastAPI, Header, HTTPException, Depends, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
-from regagent.ingest import load_corpus, load_dora, load_gdpr, load_nis2
+from regagent.ingest import load_corpus, load_dora, load_gdpr, load_nis2, load_mica
 from regagent.store import DocStore
 from regagent.sparse import BM25Index
 from regagent.graph import KnowledgeGraph
@@ -37,7 +37,7 @@ except Exception as _e:  # don't take the API down if the dashboard can't mount
 # Build the knowledge base once. Use pgvector if DATABASE_URL is set (scales,
 # survives restarts), otherwise the in-memory store (zero-setup dev).
 _chunks = (load_corpus("data/ai_act.txt") + load_dora()
-           + load_gdpr() + load_nis2())   # multi-regulation corpus
+           + load_gdpr() + load_nis2() + load_mica())   # multi-regulation corpus
 if os.environ.get("DATABASE_URL"):
     from regagent.store_pg import PgVectorStore
     _store = PgVectorStore(os.environ["DATABASE_URL"])
