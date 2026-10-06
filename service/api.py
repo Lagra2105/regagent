@@ -603,6 +603,8 @@ button:disabled{opacity:.6;cursor:progress}
 
  <label class="chk"><input type=checkbox id=fin><span><span class=t>We are a financial entity</span><span class="d"> — bank, payment, crypto-asset, investment or insurance provider (DORA)</span></span></label>
  <label class="chk"><input type=checkbox id=crit><span><span class=t>We are an essential / important entity</span><span class="d"> — energy, health, transport, digital infrastructure, etc. (NIS2)</span></span></label>
+ <label class="chk"><input type=checkbox id=crypto><span><span class=t>We issue crypto-assets or provide crypto services</span><span class="d"> — tokens, stablecoins, exchange, custody, wallet (MiCA)</span></span></label>
+ <label class="chk"><input type=checkbox id=monaco><span><span class=t>We are based in Monaco</span><span class="d"> — shows the Monaco + EU jurisdiction view</span></span></label>
 
  <div class=row>
   <div><label class=q for=lang style="margin-bottom:6px">Language</label>
@@ -624,7 +626,8 @@ $('go').onclick=async()=>{
  const body={description:$('desc').value,uses_ai:$('uses_ai').checked,
   high_risk_area:$('uses_ai').checked?$('hra').value:'',personal_data:$('pd').checked,
   special_categories:$('pd').checked&&$('spec').checked,automated_decisions:$('pd').checked&&$('auto').checked,
-  financial_entity:$('fin').checked,critical_entity:$('crit').checked,eu_market:true,lang:$('lang').value};
+  financial_entity:$('fin').checked,critical_entity:$('crit').checked,
+  crypto_assets:$('crypto').checked,based_in_monaco:$('monaco').checked,eu_market:true,lang:$('lang').value};
  try{
   const r=await fetch('/assess',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   const d=await r.json(); render(d);
@@ -632,28 +635,55 @@ $('go').onclick=async()=>{
  btn.disabled=false; $('load').style.display='none';
 };
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function bandColor(b){return b==='green'?'#16a34a':(b==='amber'?'#d97706':'#dc2626');}
+function bandLabel(b){return b==='green'?'🟢 On track':(b==='amber'?'🟠 Needs attention':'🔴 High-risk — act now');}
 function render(d){
  const o=$('out');
  if(d.demo_limited){o.innerHTML='<div class=card>'+esc(d.message)+'</div>';o.style.display='block';return;}
  if(!d.items||!d.items.length){o.innerHTML='<div class=card>No EU regulation flagged from the profile given. Add more detail (AI use, personal data, sector).</div>';o.style.display='block';return;}
- let h='<h2 style="margin:8px 0 2px">Compliance roadmap</h2>'+
+ const bc=bandColor(d.band);
+ let h='';
+ // Score header
+ h+='<div style="display:flex;align-items:center;gap:20px;margin:12px 0 2px;flex-wrap:wrap">'+
+  '<div style="width:98px;height:98px;border-radius:50%;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;border:7px solid '+bc+'">'+
+   '<div style="font-size:31px;font-weight:800;line-height:1;color:'+bc+'">'+(d.score!=null?d.score:'–')+'</div>'+
+   '<div style="font-size:11px;color:#64748b">/ 100</div></div>'+
+  '<div><div style="font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-weight:700">EU compliance exposure</div>'+
+   '<div style="font-size:22px;font-weight:800;color:'+bc+'">'+bandLabel(d.band)+'</div>'+
+   (d.jurisdiction?'<div style="font-size:13px;color:#64748b;max-width:56ch;margin-top:3px">'+esc(d.jurisdiction)+'</div>':'')+
+  '</div></div>';
+ // Compliance map (traffic-light chips)
+ h+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px">';
+ for(const it of d.items){const c=it.severity==='high'?'#dc2626':'#d97706';
+  h+='<span style="font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;color:#fff;background:'+c+'">'+esc(it.regulation)+' · '+(it.severity==='high'?'HIGH':'MED')+'</span>';}
+ for(const n of (d.not_applicable||[]))
+  h+='<span style="font-size:13px;font-weight:600;padding:6px 12px;border-radius:999px;color:#166534;background:#dcfce7">'+esc(n)+' · N/A</span>';
+ h+='</div>';
+ // Detail + remediation
+ h+='<h2 style="margin:20px 0 2px">What applies — and what to do</h2>'+
    '<p class=sub>'+d.items.length+' applicable regulation(s), highest priority first.</p>';
  for(const it of d.items){
   const sev=it.severity==='high'?'high':'medium';
   h+='<div class="item '+sev+'"><h3>'+esc(it.regulation)+
      ' <span class="badge '+sev+'">'+sev+'</span>'+
-     (it.needs_review?' <span class="badge rev">needs legal review</span>':'')+'</h3>'+
+     (it.needs_review?' <span class="badge rev">needs legal review</span>':'')+
+     (it.meta&&it.meta.in_force?' <span style="font-size:11px;color:#64748b;font-weight:500">· in force '+esc(it.meta.in_force)+'</span>':'')+'</h3>'+
      '<div class=reason>'+esc(it.applies_reason)+'</div>'+
      '<div class=obl>'+esc(it.obligations)+'</div>';
-  if(it.provisions&&it.provisions.length){
-   h+='<ul class=prov>'+it.provisions.map(p=>'<li>'+esc(p)+'</li>').join('')+'</ul>';
+  if(it.actions&&it.actions.length){
+   h+='<div style="font-size:11px;font-weight:700;color:#334155;margin:13px 0 4px;text-transform:uppercase;letter-spacing:.06em">Remediation plan</div>'+
+      '<ol style="margin:0;padding-left:18px">';
+   for(const s of it.actions)
+    h+='<li style="margin:5px 0;font-size:13.5px">'+esc(s.action)+' <span style="font:12px ui-monospace,Menlo,monospace;color:#2563eb">— '+esc(s.ref)+'</span></li>';
+   h+='</ol>';
   }
+  if(it.provisions&&it.provisions.length)
+   h+='<ul class=prov>'+it.provisions.map(p=>'<li>'+esc(p)+'</li>').join('')+'</ul>';
   h+='</div>';
  }
  if(d.not_applicable&&d.not_applicable.length)
-  h+='<div class=na>Not flagged from this profile: '+d.not_applicable.map(esc).join(', ')+
-     ' — revisit if your product or sector changes.</div>';
- h+='<div class=meta>Run cost: $'+(d.cost_usd||0)+' · grounded in cited articles · decision-support, not legal advice.</div>';
+  h+='<div class=na>Not flagged from this profile: '+d.not_applicable.map(esc).join(', ')+' — revisit if your product or sector changes.</div>';
+ h+='<div class=meta>Run cost: $'+(d.cost_usd||0)+' · grounded in cited articles · preliminary exposure score, decision-support, not legal advice.</div>';
  o.innerHTML=h; o.style.display='block'; o.scrollIntoView({behavior:'smooth'});
 }
 </script></body></html>"""
