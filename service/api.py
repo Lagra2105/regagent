@@ -162,7 +162,9 @@ class AssessIn(BaseModel):
     automated_decisions: bool = False
     financial_entity: bool = False
     critical_entity: bool = False
+    crypto_assets: bool = False
     eu_market: bool = True
+    based_in_monaco: bool = False
     lang: str = "en"
 
 
@@ -183,17 +185,20 @@ def assess(body: AssessIn, who: str = Depends(tenant)) -> dict:
         high_risk_area=body.high_risk_area, personal_data=body.personal_data,
         special_categories=body.special_categories, automated_decisions=body.automated_decisions,
         financial_entity=body.financial_entity, critical_entity=body.critical_entity,
-        eu_market=body.eu_market,
+        crypto_assets=body.crypto_assets, eu_market=body.eu_market,
+        based_in_monaco=body.based_in_monaco,
     )
     def ask(q: str, lang: str):
         return answer_question(_store, q, customer=who, graph=_graph, bm25=_bm25, lang=lang)
     rm = build_roadmap(prof, ask, lang=body.lang)
     GUARD.add(rm.cost_usd)
     return {
+        "score": rm.score, "band": rm.band, "jurisdiction": rm.jurisdiction,
         "items": [{"regulation": i.regulation, "applies_reason": i.applies_reason,
                    "severity": i.severity, "obligations": i.obligations,
                    "provisions": i.provisions, "grounded": i.grounded,
-                   "needs_review": i.needs_review} for i in rm.items],
+                   "needs_review": i.needs_review, "actions": i.actions,
+                   "meta": i.meta} for i in rm.items],
         "not_applicable": rm.not_applicable,
         "cost_usd": round(rm.cost_usd, 6),
     }
