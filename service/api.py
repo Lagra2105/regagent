@@ -635,6 +635,7 @@ $('go').onclick=async()=>{
  btn.disabled=false; $('load').style.display='none';
 };
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function mdbold(s){return esc(s).replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>');}
 function bandColor(b){return b==='green'?'#16a34a':(b==='amber'?'#d97706':'#dc2626');}
 function bandLabel(b){return b==='green'?'🟢 On track':(b==='amber'?'🟠 Needs attention':'🔴 High-risk — act now');}
 function render(d){
@@ -669,7 +670,7 @@ function render(d){
      (it.needs_review?' <span class="badge rev">needs legal review</span>':'')+
      (it.meta&&it.meta.in_force?' <span style="font-size:11px;color:#64748b;font-weight:500">· in force '+esc(it.meta.in_force)+'</span>':'')+'</h3>'+
      '<div class=reason>'+esc(it.applies_reason)+'</div>'+
-     '<div class=obl>'+esc(it.obligations)+'</div>';
+     '<div class=obl>'+mdbold(it.obligations)+'</div>';
   if(it.actions&&it.actions.length){
    h+='<div style="font-size:11px;font-weight:700;color:#334155;margin:13px 0 4px;text-transform:uppercase;letter-spacing:.06em">Remediation plan</div>'+
       '<ol style="margin:0;padding-left:18px">';
