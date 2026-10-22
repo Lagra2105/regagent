@@ -277,3 +277,46 @@ def build_roadmap(p: Profile, ask: Callable[[str, str], object], lang: str = "en
     rm.band = score_band(rm.score)
     rm.jurisdiction = jurisdiction_note(p)
     return rm
+
+
+def extract_profile(text: str) -> Profile:
+    """Infer a structured Profile from free-text startup documentation (an
+    uploaded pitch / one-pager). Uses the engine's LLM helper; conservative,
+    and the user reviews/edits the result before the assessment runs."""
+    from regagent.agent import _llm, ROUTER_MODEL
+    import json
+
+    text = (text or "")[:6000]
+    sys = {"role": "system", "content":
+           "You extract a structured EU-compliance profile of a startup from its "
+           "description. Return ONLY a JSON object with these keys: "
+           "description (a 1-2 sentence plain summary), uses_ai (bool), "
+           "high_risk_area (one of '', hiring, credit, biometrics, education, essential, law), "
+           "personal_data (bool), special_categories (bool), automated_decisions (bool), "
+           "financial_entity (bool), critical_entity (bool), crypto_assets (bool), "
+           "based_in_monaco (bool). Infer conservatively; when unknown use false or ''."}
+    usr = {"role": "user", "content": "Startup documentation:\n" + text + "\n\nReturn the JSON profile."}
+    out, _ = _llm([sys, usr], model=ROUTER_MODEL)
+
+    data: dict = {}
+    try:
+        s = out[out.find("{"): out.rfind("}") + 1]
+        data = json.loads(s)
+    except Exception:
+        data = {}
+
+    hra = data.get("high_risk_area", "")
+    if hra not in HIGH_RISK_AREAS and hra != "":
+        hra = ""
+    return Profile(
+        description=str(data.get("description", ""))[:400],
+        uses_ai=bool(data.get("uses_ai")),
+        high_risk_area=hra,
+        personal_data=bool(data.get("personal_data")),
+        special_categories=bool(data.get("special_categories")),
+        automated_decisions=bool(data.get("automated_decisions")),
+        financial_entity=bool(data.get("financial_entity")),
+        critical_entity=bool(data.get("critical_entity")),
+        crypto_assets=bool(data.get("crypto_assets")),
+        based_in_monaco=bool(data.get("based_in_monaco")),
+    )

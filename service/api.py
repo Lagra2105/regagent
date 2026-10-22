@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import os
 
-from fastapi import FastAPI, Header, HTTPException, Depends, Request
+from fastapi import FastAPI, Header, HTTPException, Depends, Request, UploadFile, File
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
@@ -19,7 +19,7 @@ from regagent.store import DocStore
 from regagent.sparse import BM25Index
 from regagent.graph import KnowledgeGraph
 from regagent.agent import answer_question
-from regagent.assess import Profile, build_roadmap
+from regagent.assess import Profile, build_roadmap, extract_profile
 from service.guard import GUARD, RATE
 
 app = FastAPI(title="RegAgent", version="0.1.0")
@@ -202,6 +202,47 @@ def assess(body: AssessIn, who: str = Depends(tenant)) -> dict:
         "not_applicable": rm.not_applicable,
         "cost_usd": round(rm.cost_usd, 6),
     }
+
+
+def _extract_text(name: str, raw: bytes) -> str:
+    """Best-effort text extraction from an uploaded PDF / DOCX / TXT."""
+    import io
+    n = (name or "").lower()
+    try:
+        if n.endswith(".pdf"):
+            from pypdf import PdfReader
+            r = PdfReader(io.BytesIO(raw))
+            return "\n".join((p.extract_text() or "") for p in r.pages)
+        if n.endswith(".docx"):
+            import docx
+            d = docx.Document(io.BytesIO(raw))
+            return "\n".join(p.text for p in d.paragraphs)
+        return raw.decode("utf-8", "ignore")
+    except Exception:
+        return ""
+
+
+@app.post("/assess/extract", dependencies=[Depends(rate_limit)])
+async def assess_extract(file: UploadFile = File(...)) -> dict:
+    """Upload a startup document (PDF/DOCX/TXT) → inferred profile to pre-fill the
+    form. The user reviews and edits before running the assessment."""
+    if not GUARD.allowed():
+        return {"ok": False, "message": "The shared demo has reached today's budget limit."}
+    raw = await file.read()
+    if len(raw) > 4_000_000:
+        return {"ok": False, "message": "File too large (max 4 MB)."}
+    text = _extract_text(file.filename or "", raw)
+    if not text.strip():
+        return {"ok": False, "message": "Couldn't read text from this file — try a PDF, DOCX or TXT."}
+    p = extract_profile(text)
+    GUARD.add(0.001)
+    return {"ok": True, "profile": {
+        "description": p.description, "uses_ai": p.uses_ai, "high_risk_area": p.high_risk_area,
+        "personal_data": p.personal_data, "special_categories": p.special_categories,
+        "automated_decisions": p.automated_decisions, "financial_entity": p.financial_entity,
+        "critical_entity": p.critical_entity, "crypto_assets": p.crypto_assets,
+        "based_in_monaco": p.based_in_monaco,
+    }}
 
 
 @app.get("/assess", response_class=HTMLResponse)
@@ -580,6 +621,12 @@ button:disabled{opacity:.6;cursor:progress}
 <div class=card>
  <label class=q for=desc>Describe your product (a few sentences)</label>
  <textarea id=desc placeholder="e.g. A SaaS platform that screens job candidates by scoring their CVs with a machine-learning model, for EU employers."></textarea>
+ <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0 2px">
+  <input type=file id=doc accept=".pdf,.docx,.txt" style="font:13px inherit;max-width:240px">
+  <button id=upbtn type=button style="font:13px inherit">Read document &amp; pre-fill →</button>
+  <span id=upmsg style="font-size:12px;color:var(--mut)"></span>
+ </div>
+ <div class=sub style="margin:2px 0 8px">…or upload a pitch / one-pager (PDF, DOCX, TXT) — we read it and fill the form for you to review.</div>
 
  <label class="chk"><input type=checkbox id=uses_ai><span><span class=t>Our product uses AI / ML</span><span class="d"> — models that make predictions, classifications or generate content</span></span></label>
  <div class=sub-opts id=ai_opts>
@@ -621,6 +668,28 @@ button:disabled{opacity:.6;cursor:progress}
 const $=id=>document.getElementById(id);
 $('uses_ai').onchange=e=>$('ai_opts').style.display=e.target.checked?'block':'none';
 $('pd').onchange=e=>$('pd_opts').style.display=e.target.checked?'block':'none';
+function applyProfile(p){
+ $('desc').value=p.description||$('desc').value;
+ $('uses_ai').checked=!!p.uses_ai; $('ai_opts').style.display=p.uses_ai?'block':'none';
+ if(p.uses_ai&&p.high_risk_area){$('hra').value=p.high_risk_area;}
+ $('pd').checked=!!p.personal_data; $('pd_opts').style.display=p.personal_data?'block':'none';
+ $('spec').checked=!!p.special_categories; $('auto').checked=!!p.automated_decisions;
+ $('fin').checked=!!p.financial_entity; $('crit').checked=!!p.critical_entity;
+ $('crypto').checked=!!p.crypto_assets; $('monaco').checked=!!p.based_in_monaco;
+}
+$('upbtn').onclick=async()=>{
+ const f=$('doc').files[0]; const m=$('upmsg');
+ if(!f){m.textContent='Choose a file first.';return;}
+ m.textContent='Reading your document…'; $('upbtn').disabled=true;
+ try{
+  const fd=new FormData(); fd.append('file',f);
+  const r=await fetch('/assess/extract',{method:'POST',body:fd});
+  const d=await r.json();
+  if(!d.ok){m.textContent=d.message||'Could not read the file.';}
+  else{applyProfile(d.profile); m.textContent='✓ Filled from your document — review below, then generate.';}
+ }catch(e){m.textContent='Error: '+e;}
+ $('upbtn').disabled=false;
+};
 $('go').onclick=async()=>{
  const btn=$('go'); btn.disabled=true; $('load').style.display='block'; $('out').style.display='none';
  const body={description:$('desc').value,uses_ai:$('uses_ai').checked,
