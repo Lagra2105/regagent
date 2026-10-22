@@ -6,6 +6,7 @@ pgvector
 openai
 pypdf
 python-docx
+python-multipart
 
 # optional: real cross-encoder reranking (REGAGENT_RERANK=cross-encoder).
 # heavy (pulls torch) — left out of the default/slim image; install on demand:
