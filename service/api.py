@@ -604,8 +604,8 @@ _ASSESS_HTML = r"""<!doctype html><html lang=en><head><meta charset=utf-8>
 *{box-sizing:border-box}body{margin:0;background:#f1f5f9;color:var(--ink);
  font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 .wrap{max-width:820px;margin:0 auto;padding:32px 20px 64px}
-.top{display:flex;align-items:center;gap:10px;margin-bottom:4px}
-.top b{font-size:19px}
+.top{display:flex;align-items:center;gap:11px;margin-bottom:4px}
+.top b{font-size:21px;letter-spacing:-.01em}
 .top-right{margin-left:auto;display:flex;align-items:center;gap:14px}
 .top a{color:var(--mut);text-decoration:none;font-size:13px}
 .langtog{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
@@ -649,12 +649,37 @@ button:disabled{opacity:.6;cursor:progress}
 .load{display:none;color:var(--mut);margin-top:16px}
 .foot{color:var(--mut);font-size:12px;margin-top:26px;border-top:1px solid var(--line);padding-top:12px}
 </style></head><body><div class=wrap>
-<div class=top><span style="font-size:22px">🛡️</span><b>RegAgent</b>
+<div class=top><svg width=38 height=38 viewBox="0 0 48 48" fill=none aria-label=RegAgent style="flex:none">
+  <defs><linearGradient id=rgShield x1=24 y1=3 x2=24 y2=46 gradientUnits=userSpaceOnUse>
+   <stop stop-color="#3b82f6"/><stop offset=1 stop-color="#2563eb"/></linearGradient></defs>
+  <path d="M24 3.5 L40.5 9.5 V24 C40.5 33.8 33.4 41.8 24 44.5 C14.6 41.8 7.5 33.8 7.5 24 V9.5 Z" fill="url(#rgShield)"/>
+  <path d="M24 3.5 L40.5 9.5 V24 C40.5 33.8 33.4 41.8 24 44.5 C14.6 41.8 7.5 33.8 7.5 24 V9.5 Z" fill=none stroke="#1d4ed8" stroke-width=1 opacity=".35"/>
+  <path d="M16.5 24.3 L21.6 29.4 L31.8 18.2" stroke="#fff" stroke-width=3.4 stroke-linecap=round stroke-linejoin=round/></svg>
+ <b>RegAgent</b>
  <div class=top-right>
   <div class=langtog><button type=button data-lang=en>EN</button><button type=button data-lang=fr>FR</button></div>
   <a href="/demo" data-i18n=ask>Ask a question →</a>
  </div></div>
-<h1 data-i18n=h1>Assess your startup</h1>
+<div style="display:flex;align-items:center;gap:13px;flex-wrap:wrap;margin:6px 0 4px">
+<h1 data-i18n=h1 style="margin:0">Assess your startup</h1>
+<svg width=34 height=23 viewBox="0 0 54 36" style="flex:none;border-radius:4px;box-shadow:0 1px 3px rgba(15,23,42,.18)" aria-label="European Union">
+ <rect width=54 height=36 rx=4 fill="#039"/>
+ <g fill="#FC0">
+  <path d="M0 -2 L.45 -.62 L1.9 -.62 L.73 .24 L1.18 1.62 L0 .76 L-1.18 1.62 L-.73 .24 L-1.9 -.62 L-.45 -.62 Z" transform="translate(27 6)"/>
+  <path d="M0 -2 L.45 -.62 L1.9 -.62 L.73 .24 L1.18 1.62 L0 .76 L-1.18 1.62 L-.73 .24 L-1.9 -.62 L-.45 -.62 Z" transform="translate(33 7.61)"/>
+  <path d="M0 -2 L.45 -.62 L1.9 -.62 L.73 .24 L1.18 1.62 L0 .76 L-1.18 1.62 L-.73 .24 L-1.9 -.62 L-.45 -.62 Z" transform="translate(37.39 12)"/>
+  <path d="M0 -2 L.45 -.62 L1.9 -.62 L.73 .24 L1.18 1.62 L0 .76 L-1.18 1.62 L-.73 .24 L-1.9 -.62 L-.45 -.62 Z" transform="translate(39 18)"/>
+  <path d="M0 -2 L.45 -.62 L1.9 -.62 L.73 .24 L1.18 1.62 L0 .76 L-1.18 1.62 L-.73 .24 L-1.9 -.62 L-.45 -.62 Z" transform="translate(37.39 24)"/>
+  <path d="M0 -2 L.45 -.62 L1.9 -.62 L.73 .24 L1.18 1.62 L0 .76 L-1.18 1.62 L-.73 .24 L-1.9 -.62 L-.45 -.62 Z" transform="translate(33 28.39)"/>
+  <path d="M0 -2 L.45 -.62 L1.9 -.62 L.73 .24 L1.18 1.62 L0 .76 L-1.18 1.62 L-.73 .24 L-1.9 -.62 L-.45 -.62 Z" transform="translate(27 30)"/>
+  <path d="M0 -2 L.45 -.62 L1.9 -.62 L.73 .24 L1.18 1.62 L0 .76 L-1.18 1.62 L-.73 .24 L-1.9 -.62 L-.45 -.62 Z" transform="translate(21 28.39)"/>
+  <path d="M0 -2 L.45 -.62 L1.9 -.62 L.73 .24 L1.18 1.62 L0 .76 L-1.18 1.62 L-.73 .24 L-1.9 -.62 L-.45 -.62 Z" transform="translate(16.61 24)"/>
+  <path d="M0 -2 L.45 -.62 L1.9 -.62 L.73 .24 L1.18 1.62 L0 .76 L-1.18 1.62 L-.73 .24 L-1.9 -.62 L-.45 -.62 Z" transform="translate(15 18)"/>
+  <path d="M0 -2 L.45 -.62 L1.9 -.62 L.73 .24 L1.18 1.62 L0 .76 L-1.18 1.62 L-.73 .24 L-1.9 -.62 L-.45 -.62 Z" transform="translate(16.61 12)"/>
+  <path d="M0 -2 L.45 -.62 L1.9 -.62 L.73 .24 L1.18 1.62 L0 .76 L-1.18 1.62 L-.73 .24 L-1.9 -.62 L-.45 -.62 Z" transform="translate(21 7.61)"/>
+ </g>
+</svg>
+</div>
 <p class=sub data-i18n=sub>Describe your product. RegAgent identifies which EU regulations apply and builds a grounded, actionable compliance roadmap.</p>
 <div class=disc><b data-i18n=disc_b>Decision-support triage, not legal advice.</b> <span data-i18n=disc_r>Requirements are grounded in cited articles; confirm with qualified counsel before relying on them.</span></div>
 
