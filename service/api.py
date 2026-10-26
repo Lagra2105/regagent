@@ -11,7 +11,7 @@ from __future__ import annotations
 import os
 
 from fastapi import FastAPI, Header, HTTPException, Depends, Request, UploadFile, File
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from pydantic import BaseModel
 
 from regagent.ingest import load_corpus, load_dora, load_gdpr, load_nis2, load_mica
@@ -243,6 +243,32 @@ async def assess_extract(file: UploadFile = File(...)) -> dict:
         "critical_entity": p.critical_entity, "crypto_assets": p.crypto_assets,
         "based_in_monaco": p.based_in_monaco,
     }}
+
+
+class ReportIn(BaseModel):
+    """An already-computed assessment result (as returned by /assess) + the
+    product description, to render into a downloadable PDF report."""
+    description: str = ""
+    score: int | None = None
+    band: str = ""
+    jurisdiction: str = ""
+    items: list[dict] = []
+    not_applicable: list[str] = []
+    cost_usd: float = 0.0
+
+
+@app.post("/assess/report", dependencies=[Depends(rate_limit)])
+def assess_report(body: ReportIn) -> Response:
+    """Render the assessment the user already ran into a branded PDF report.
+
+    Pure rendering — no LLM, no re-grounding (so it's free and matches what was
+    shown on screen). Decision-support, not legal advice."""
+    from regagent.report import build_report_pdf
+    pdf = build_report_pdf(body.model_dump())
+    return Response(
+        content=pdf, media_type="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="RegAgent-compliance-report.pdf"'},
+    )
 
 
 @app.get("/assess", response_class=HTMLResponse)
@@ -712,6 +738,7 @@ function render(d){
  if(d.demo_limited){o.innerHTML='<div class=card>'+esc(d.message)+'</div>';o.style.display='block';return;}
  if(!d.items||!d.items.length){o.innerHTML='<div class=card>No EU regulation flagged from the profile given. Add more detail (AI use, personal data, sector).</div>';o.style.display='block';return;}
  const bc=bandColor(d.band);
+ window._assess=d;
  let h='';
  // Score header
  h+='<div style="display:flex;align-items:center;gap:20px;margin:12px 0 2px;flex-wrap:wrap">'+
@@ -729,6 +756,10 @@ function render(d){
  for(const n of (d.not_applicable||[]))
   h+='<span style="font-size:13px;font-weight:600;padding:6px 12px;border-radius:999px;color:#166534;background:#dcfce7">'+esc(n)+' · N/A</span>';
  h+='</div>';
+ // Download report
+ h+='<div style="margin:16px 0 2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
+    '<button id=dl style="font-size:14px">⬇ Download PDF report</button>'+
+    '<span style="font-size:12px;color:#64748b">Shareable one-page summary — score, map &amp; remediation</span></div>';
  // Detail + remediation
  h+='<h2 style="margin:20px 0 2px">What applies — and what to do</h2>'+
    '<p class=sub>'+d.items.length+' applicable regulation(s), highest priority first.</p>';
@@ -755,5 +786,19 @@ function render(d){
   h+='<div class=na>Not flagged from this profile: '+d.not_applicable.map(esc).join(', ')+' — revisit if your product or sector changes.</div>';
  h+='<div class=meta>Run cost: $'+(d.cost_usd||0)+' · grounded in cited articles · preliminary exposure score, decision-support, not legal advice.</div>';
  o.innerHTML=h; o.style.display='block'; o.scrollIntoView({behavior:'smooth'});
+ const dlb=$('dl'); if(dlb) dlb.onclick=downloadReport;
+}
+async function downloadReport(){
+ const d=window._assess; if(!d) return;
+ const btn=$('dl'); const old=btn.textContent; btn.disabled=true; btn.textContent='Preparing…';
+ try{
+  const body=Object.assign({description:$('desc').value}, d);
+  const r=await fetch('/assess/report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  const blob=await r.blob(); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='RegAgent-compliance-report.pdf';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+ }catch(e){alert('Could not generate report: '+e);}
+ btn.textContent=old; btn.disabled=false;
 }
 </script></body></html>"""
