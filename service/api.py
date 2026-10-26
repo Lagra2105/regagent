@@ -605,7 +605,18 @@ _ASSESS_HTML = r"""<!doctype html><html lang=en><head><meta charset=utf-8>
  font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 .wrap{max-width:820px;margin:0 auto;padding:32px 20px 64px}
 .top{display:flex;align-items:center;gap:10px;margin-bottom:4px}
-.top b{font-size:19px}.top a{margin-left:auto;color:var(--mut);text-decoration:none;font-size:13px}
+.top b{font-size:19px}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.top a{color:var(--mut);text-decoration:none;font-size:13px}
+.langtog{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.langtog button{background:#fff;color:var(--mut);border:0;padding:5px 12px;font:13px inherit;font-weight:700;cursor:pointer}
+.langtog button.active{background:var(--accent);color:#fff}
+.upload{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;padding:11px 13px;margin:10px 0 4px}
+.ghost{background:#fff;color:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:8px 13px;font:13px inherit;font-weight:600;cursor:pointer}
+.ghost:hover{background:#eff6ff}
+.fname{font-size:13px;color:var(--mut);flex:1;min-width:120px}
+.hint{color:var(--mut);font-size:12.5px;margin:2px 0 10px}
+.upmsg{font-size:12px;color:var(--mut);display:block;margin:0 0 6px;min-height:14px}
 h1{font-size:26px;margin:6px 0 4px}.sub{color:var(--mut);margin:0 0 14px}
 .disc{background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;border-radius:10px;
  padding:10px 13px;font-size:13px;margin:0 0 20px}
@@ -639,59 +650,143 @@ button:disabled{opacity:.6;cursor:progress}
 .foot{color:var(--mut);font-size:12px;margin-top:26px;border-top:1px solid var(--line);padding-top:12px}
 </style></head><body><div class=wrap>
 <div class=top><span style="font-size:22px">🛡️</span><b>RegAgent</b>
- <a href="/demo">Ask a question →</a></div>
-<h1>Assess your startup</h1>
-<p class=sub>Describe your product. RegAgent identifies which EU regulations apply and builds a grounded, actionable compliance roadmap.</p>
-<div class=disc><b>Decision-support triage, not legal advice.</b> Requirements are grounded in cited articles; confirm with qualified counsel before relying on them.</div>
+ <div class=top-right>
+  <div class=langtog><button type=button data-lang=en>EN</button><button type=button data-lang=fr>FR</button></div>
+  <a href="/demo" data-i18n=ask>Ask a question →</a>
+ </div></div>
+<h1 data-i18n=h1>Assess your startup</h1>
+<p class=sub data-i18n=sub>Describe your product. RegAgent identifies which EU regulations apply and builds a grounded, actionable compliance roadmap.</p>
+<div class=disc><b data-i18n=disc_b>Decision-support triage, not legal advice.</b> <span data-i18n=disc_r>Requirements are grounded in cited articles; confirm with qualified counsel before relying on them.</span></div>
 
 <div class=card>
- <label class=q for=desc>Describe your product (a few sentences)</label>
- <textarea id=desc placeholder="e.g. A SaaS platform that screens job candidates by scoring their CVs with a machine-learning model, for EU employers."></textarea>
- <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0 2px">
-  <input type=file id=doc accept=".pdf,.docx,.txt" style="font:13px inherit;max-width:240px">
-  <button id=upbtn type=button style="font:13px inherit">Read document &amp; pre-fill →</button>
-  <span id=upmsg style="font-size:12px;color:var(--mut)"></span>
+ <label class=q for=desc data-i18n=desclabel>Describe your product (a few sentences)</label>
+ <textarea id=desc data-i18n-ph=descph placeholder="e.g. A SaaS platform that screens job candidates by scoring their CVs with a machine-learning model, for EU employers."></textarea>
+ <div class=upload>
+  <input type=file id=doc accept=".pdf,.docx,.txt" hidden>
+  <button id=choose type=button class=ghost data-i18n=choose>📎 Choose a file</button>
+  <span id=fname class=fname>No file chosen</span>
+  <button id=upbtn type=button class=ghost data-i18n=prefill>Read &amp; pre-fill →</button>
  </div>
- <div class=sub style="margin:2px 0 8px">…or upload a pitch / one-pager (PDF, DOCX, TXT) — we read it and fill the form for you to review.</div>
+ <span id=upmsg class=upmsg></span>
+ <div class=hint data-i18n=uploadhint>…or upload a pitch / one-pager (PDF, DOCX, TXT) — we read it and fill the form for you to review.</div>
 
- <label class="chk"><input type=checkbox id=uses_ai><span><span class=t>Our product uses AI / ML</span><span class="d"> — models that make predictions, classifications or generate content</span></span></label>
+ <label class="chk"><input type=checkbox id=uses_ai><span><span class=t data-i18n=ai_t>Our product uses AI / ML</span><span class="d" data-i18n=ai_d> — models that make predictions, classifications or generate content</span></span></label>
  <div class=sub-opts id=ai_opts>
-  <label class=q for=hra>What does the AI do? (determines risk tier)</label>
+  <label class=q for=hra data-i18n=hralabel>What does the AI do? (determines risk tier)</label>
   <select id=hra>
-   <option value="">Other / general purpose</option>
-   <option value=hiring>Hiring, recruitment or worker management</option>
-   <option value=credit>Credit scoring / creditworthiness</option>
-   <option value=biometrics>Biometric identification</option>
-   <option value=education>Education / exam scoring</option>
-   <option value=essential>Access to essential services (public or private)</option>
-   <option value=law>Law enforcement</option>
+   <option value="" data-i18n=o_other>Other / general purpose</option>
+   <option value=hiring data-i18n=o_hiring>Hiring, recruitment or worker management</option>
+   <option value=credit data-i18n=o_credit>Credit scoring / creditworthiness</option>
+   <option value=biometrics data-i18n=o_biometrics>Biometric identification</option>
+   <option value=education data-i18n=o_education>Education / exam scoring</option>
+   <option value=essential data-i18n=o_essential>Access to essential services (public or private)</option>
+   <option value=law data-i18n=o_law>Law enforcement</option>
   </select>
  </div>
 
- <label class="chk"><input type=checkbox id=pd><span><span class=t>We process personal data</span><span class="d"> — any data about identifiable individuals (names, emails, behaviour…)</span></span></label>
+ <label class="chk"><input type=checkbox id=pd><span><span class=t data-i18n=pd_t>We process personal data</span><span class="d" data-i18n=pd_d> — any data about identifiable individuals (names, emails, behaviour…)</span></span></label>
  <div class=sub-opts id=pd_opts>
-  <label class="chk"><input type=checkbox id=spec><span><span class=t>…including special-category data</span><span class="d"> — health, biometrics, ethnicity, beliefs, etc.</span></span></label>
-  <label class="chk"><input type=checkbox id=auto><span><span class=t>…used for solely-automated decisions about people</span></span></label>
+  <label class="chk"><input type=checkbox id=spec><span><span class=t data-i18n=spec_t>…including special-category data</span><span class="d" data-i18n=spec_d> — health, biometrics, ethnicity, beliefs, etc.</span></span></label>
+  <label class="chk"><input type=checkbox id=auto><span><span class=t data-i18n=auto_t>…used for solely-automated decisions about people</span></span></label>
  </div>
 
- <label class="chk"><input type=checkbox id=fin><span><span class=t>We are a financial entity</span><span class="d"> — bank, payment, crypto-asset, investment or insurance provider (DORA)</span></span></label>
- <label class="chk"><input type=checkbox id=crit><span><span class=t>We are an essential / important entity</span><span class="d"> — energy, health, transport, digital infrastructure, etc. (NIS2)</span></span></label>
- <label class="chk"><input type=checkbox id=crypto><span><span class=t>We issue crypto-assets or provide crypto services</span><span class="d"> — tokens, stablecoins, exchange, custody, wallet (MiCA)</span></span></label>
- <label class="chk"><input type=checkbox id=monaco><span><span class=t>We are based in Monaco</span><span class="d"> — shows the Monaco + EU jurisdiction view</span></span></label>
+ <label class="chk"><input type=checkbox id=fin><span><span class=t data-i18n=fin_t>We are a financial entity</span><span class="d" data-i18n=fin_d> — bank, payment, crypto-asset, investment or insurance provider (DORA)</span></span></label>
+ <label class="chk"><input type=checkbox id=crit><span><span class=t data-i18n=crit_t>We are an essential / important entity</span><span class="d" data-i18n=crit_d> — energy, health, transport, digital infrastructure, etc. (NIS2)</span></span></label>
+ <label class="chk"><input type=checkbox id=crypto><span><span class=t data-i18n=crypto_t>We issue crypto-assets or provide crypto services</span><span class="d" data-i18n=crypto_d> — tokens, stablecoins, exchange, custody, wallet (MiCA)</span></span></label>
+ <label class="chk"><input type=checkbox id=monaco><span><span class=t data-i18n=monaco_t>We are based in Monaco</span><span class="d" data-i18n=monaco_d> — shows the Monaco + EU jurisdiction view</span></span></label>
 
  <div class=row>
-  <div><label class=q for=lang style="margin-bottom:6px">Language</label>
-   <select id=lang style="width:auto"><option value=en>English</option><option value=fr>Français</option></select></div>
-  <button id=go>Generate compliance roadmap →</button>
+  <button id=go data-i18n=go>Generate compliance roadmap →</button>
  </div>
- <div class=load id=load>Analysing across regulations… grounding each requirement in the corpus. This can take ~20 s locally.</div>
+ <div class=load id=load data-i18n=load>Analysing across regulations… grounding each requirement in the corpus. This can take ~20 s.</div>
 </div>
 
 <div id=out></div>
-<div class=foot>RegAgent · EU AI Act · DORA · GDPR · NIS2 — grounded, with honest abstention. Not legal advice.</div>
+<div class=foot data-i18n=foot>RegAgent · EU AI Act · DORA · GDPR · NIS2 · MiCA — grounded, with honest abstention. Not legal advice.</div>
 </div>
 <script>
 const $=id=>document.getElementById(id);
+const T={
+ en:{ask:"Ask a question →",h1:"Assess your startup",
+  sub:"Describe your product. RegAgent identifies which EU regulations apply and builds a grounded, actionable compliance roadmap.",
+  disc_b:"Decision-support triage, not legal advice.",
+  disc_r:"Requirements are grounded in cited articles; confirm with qualified counsel before relying on them.",
+  desclabel:"Describe your product (a few sentences)",
+  descph:"e.g. A SaaS platform that screens job candidates by scoring their CVs with a machine-learning model, for EU employers.",
+  choose:"📎 Choose a file",nofile:"No file chosen",prefill:"Read & pre-fill →",
+  uploadhint:"…or upload a pitch / one-pager (PDF, DOCX, TXT) — we read it and fill the form for you to review.",
+  ai_t:"Our product uses AI / ML",ai_d:" — models that make predictions, classifications or generate content",
+  hralabel:"What does the AI do? (determines risk tier)",
+  o_other:"Other / general purpose",o_hiring:"Hiring, recruitment or worker management",
+  o_credit:"Credit scoring / creditworthiness",o_biometrics:"Biometric identification",
+  o_education:"Education / exam scoring",o_essential:"Access to essential services (public or private)",
+  o_law:"Law enforcement",
+  pd_t:"We process personal data",pd_d:" — any data about identifiable individuals (names, emails, behaviour…)",
+  spec_t:"…including special-category data",spec_d:" — health, biometrics, ethnicity, beliefs, etc.",
+  auto_t:"…used for solely-automated decisions about people",
+  fin_t:"We are a financial entity",fin_d:" — bank, payment, crypto-asset, investment or insurance provider (DORA)",
+  crit_t:"We are an essential / important entity",crit_d:" — energy, health, transport, digital infrastructure, etc. (NIS2)",
+  crypto_t:"We issue crypto-assets or provide crypto services",crypto_d:" — tokens, stablecoins, exchange, custody, wallet (MiCA)",
+  monaco_t:"We are based in Monaco",monaco_d:" — shows the Monaco + EU jurisdiction view",
+  go:"Generate compliance roadmap →",
+  load:"Analysing across regulations… grounding each requirement in the corpus. This can take ~20 s.",
+  foot:"RegAgent · EU AI Act · DORA · GDPR · NIS2 · MiCA — grounded, with honest abstention. Not legal advice.",
+  exposure:"EU compliance exposure",band_green:"🟢 On track",band_amber:"🟠 Needs attention",band_red:"🔴 High-risk — act now",
+  dl:"⬇ Download PDF report",dlhint:"Shareable one-page summary — score, map & remediation",
+  whatapplies:"What applies — and what to do",applies1:" applicable regulation(s), highest priority first.",
+  remplan:"Remediation plan",needsrev:"needs legal review",inforce:"in force",
+  notflagged1:"Not flagged from this profile: ",notflagged2:" — revisit if your product or sector changes.",
+  runcost:"Run cost: $",
+  scorenote:" · grounded in cited articles · preliminary exposure score, decision-support, not legal advice.",
+  noreg:"No EU regulation flagged from the profile given. Add more detail (AI use, personal data, sector).",
+  preparing:"Preparing…",upreading:"Reading your document…",
+  upfilled:"✓ Filled from your document — review below, then generate.",
+  upchoose:"Choose a file first.",upfail:"Could not read the file."},
+ fr:{ask:"Poser une question →",h1:"Évaluez votre startup",
+  sub:"Décrivez votre produit. RegAgent identifie les réglementations européennes applicables et construit une feuille de route de conformité, fondée et actionnable.",
+  disc_b:"Aide à la décision, pas un conseil juridique.",
+  disc_r:"Les exigences sont fondées sur des articles cités ; confirmez avec un conseil qualifié avant de vous y fier.",
+  desclabel:"Décrivez votre produit (quelques phrases)",
+  descph:"ex. une plateforme SaaS qui présélectionne des candidats en notant leurs CV avec un modèle de machine learning, pour des employeurs de l'UE.",
+  choose:"📎 Choisir un fichier",nofile:"Aucun fichier choisi",prefill:"Lire & pré-remplir →",
+  uploadhint:"…ou importez un pitch / une page de présentation (PDF, DOCX, TXT) — nous le lisons et remplissons le formulaire pour vous.",
+  ai_t:"Notre produit utilise l'IA / le ML",ai_d:" — des modèles qui font des prédictions, des classifications ou génèrent du contenu",
+  hralabel:"Que fait l'IA ? (détermine le niveau de risque)",
+  o_other:"Autre / usage général",o_hiring:"Embauche, recrutement ou gestion du personnel",
+  o_credit:"Scoring de crédit / solvabilité",o_biometrics:"Identification biométrique",
+  o_education:"Éducation / notation d'examens",o_essential:"Accès aux services essentiels (publics ou privés)",
+  o_law:"Maintien de l'ordre",
+  pd_t:"Nous traitons des données personnelles",pd_d:" — toute donnée concernant des personnes identifiables (noms, e-mails, comportement…)",
+  spec_t:"…dont des données sensibles",spec_d:" — santé, biométrie, origine, convictions, etc.",
+  auto_t:"…utilisées pour des décisions entièrement automatisées concernant des personnes",
+  fin_t:"Nous sommes une entité financière",fin_d:" — banque, paiement, crypto-actifs, investissement ou assurance (DORA)",
+  crit_t:"Nous sommes une entité essentielle / importante",crit_d:" — énergie, santé, transport, infrastructure numérique, etc. (NIS2)",
+  crypto_t:"Nous émettons des crypto-actifs ou fournissons des services crypto",crypto_d:" — jetons, stablecoins, échange, conservation, portefeuille (MiCA)",
+  monaco_t:"Nous sommes basés à Monaco",monaco_d:" — affiche la vue de juridiction Monaco + UE",
+  go:"Générer la feuille de route →",
+  load:"Analyse des réglementations… chaque exigence est fondée dans le corpus. Cela peut prendre ~20 s.",
+  foot:"RegAgent · AI Act · DORA · RGPD · NIS2 · MiCA — fondé, avec abstention honnête. Pas un conseil juridique.",
+  exposure:"Exposition à la conformité UE",band_green:"🟢 Sur la bonne voie",band_amber:"🟠 À surveiller",band_red:"🔴 Risque élevé — agir",
+  dl:"⬇ Télécharger le rapport PDF",dlhint:"Résumé partageable d'une page — score, carte & remédiation",
+  whatapplies:"Ce qui s'applique — et quoi faire",applies1:" réglementation(s) applicable(s), par ordre de priorité.",
+  remplan:"Plan de remédiation",needsrev:"revue juridique requise",inforce:"en vigueur",
+  notflagged1:"Non signalé pour ce profil : ",notflagged2:" — à revoir si votre produit ou secteur change.",
+  runcost:"Coût d'analyse : $",
+  scorenote:" · fondé sur des articles cités · score d'exposition préliminaire, aide à la décision, pas un conseil juridique.",
+  noreg:"Aucune réglementation UE signalée à partir du profil. Ajoutez des détails (usage de l'IA, données personnelles, secteur).",
+  preparing:"Préparation…",upreading:"Lecture de votre document…",
+  upfilled:"✓ Rempli à partir de votre document — vérifiez, puis générez.",
+  upchoose:"Choisissez d'abord un fichier.",upfail:"Impossible de lire le fichier."}
+};
+window._lang='en';
+function L(k){return (T[window._lang]||T.en)[k];}
+function applyLang(l){
+ window._lang=l; document.documentElement.lang=l;
+ document.querySelectorAll('[data-i18n]').forEach(function(el){var k=el.getAttribute('data-i18n'); if(T[l][k]!=null) el.textContent=T[l][k];});
+ document.querySelectorAll('[data-i18n-ph]').forEach(function(el){var k=el.getAttribute('data-i18n-ph'); if(T[l][k]!=null) el.placeholder=T[l][k];});
+ document.querySelectorAll('.langtog button').forEach(function(b){b.classList.toggle('active', b.getAttribute('data-lang')===l);});
+ var f=$('doc')&&$('doc').files[0]; if($('fname')) $('fname').textContent=f?f.name:T[l].nofile;
+}
 $('uses_ai').onchange=e=>$('ai_opts').style.display=e.target.checked?'block':'none';
 $('pd').onchange=e=>$('pd_opts').style.display=e.target.checked?'block':'none';
 function applyProfile(p){
@@ -705,14 +800,14 @@ function applyProfile(p){
 }
 $('upbtn').onclick=async()=>{
  const f=$('doc').files[0]; const m=$('upmsg');
- if(!f){m.textContent='Choose a file first.';return;}
- m.textContent='Reading your document…'; $('upbtn').disabled=true;
+ if(!f){m.textContent=L('upchoose');return;}
+ m.textContent=L('upreading'); $('upbtn').disabled=true;
  try{
   const fd=new FormData(); fd.append('file',f);
   const r=await fetch('/assess/extract',{method:'POST',body:fd});
   const d=await r.json();
-  if(!d.ok){m.textContent=d.message||'Could not read the file.';}
-  else{applyProfile(d.profile); m.textContent='✓ Filled from your document — review below, then generate.';}
+  if(!d.ok){m.textContent=d.message||L('upfail');}
+  else{applyProfile(d.profile); m.textContent=L('upfilled');}
  }catch(e){m.textContent='Error: '+e;}
  $('upbtn').disabled=false;
 };
@@ -722,7 +817,7 @@ $('go').onclick=async()=>{
   high_risk_area:$('uses_ai').checked?$('hra').value:'',personal_data:$('pd').checked,
   special_categories:$('pd').checked&&$('spec').checked,automated_decisions:$('pd').checked&&$('auto').checked,
   financial_entity:$('fin').checked,critical_entity:$('crit').checked,
-  crypto_assets:$('crypto').checked,based_in_monaco:$('monaco').checked,eu_market:true,lang:$('lang').value};
+  crypto_assets:$('crypto').checked,based_in_monaco:$('monaco').checked,eu_market:true,lang:window._lang};
  try{
   const r=await fetch('/assess',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   const d=await r.json(); render(d);
@@ -732,11 +827,11 @@ $('go').onclick=async()=>{
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
 function mdbold(s){return esc(s).replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>');}
 function bandColor(b){return b==='green'?'#16a34a':(b==='amber'?'#d97706':'#dc2626');}
-function bandLabel(b){return b==='green'?'🟢 On track':(b==='amber'?'🟠 Needs attention':'🔴 High-risk — act now');}
+function bandLabel(b){return L('band_'+b);}
 function render(d){
  const o=$('out');
  if(d.demo_limited){o.innerHTML='<div class=card>'+esc(d.message)+'</div>';o.style.display='block';return;}
- if(!d.items||!d.items.length){o.innerHTML='<div class=card>No EU regulation flagged from the profile given. Add more detail (AI use, personal data, sector).</div>';o.style.display='block';return;}
+ if(!d.items||!d.items.length){o.innerHTML='<div class=card>'+esc(L('noreg'))+'</div>';o.style.display='block';return;}
  const bc=bandColor(d.band);
  window._assess=d;
  let h='';
@@ -745,7 +840,7 @@ function render(d){
   '<div style="width:98px;height:98px;border-radius:50%;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;border:7px solid '+bc+'">'+
    '<div style="font-size:31px;font-weight:800;line-height:1;color:'+bc+'">'+(d.score!=null?d.score:'–')+'</div>'+
    '<div style="font-size:11px;color:#64748b">/ 100</div></div>'+
-  '<div><div style="font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-weight:700">EU compliance exposure</div>'+
+  '<div><div style="font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-weight:700">'+L('exposure')+'</div>'+
    '<div style="font-size:22px;font-weight:800;color:'+bc+'">'+bandLabel(d.band)+'</div>'+
    (d.jurisdiction?'<div style="font-size:13px;color:#64748b;max-width:56ch;margin-top:3px">'+esc(d.jurisdiction)+'</div>':'')+
   '</div></div>';
@@ -758,21 +853,21 @@ function render(d){
  h+='</div>';
  // Download report
  h+='<div style="margin:16px 0 2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
-    '<button id=dl style="font-size:14px">⬇ Download PDF report</button>'+
-    '<span style="font-size:12px;color:#64748b">Shareable one-page summary — score, map &amp; remediation</span></div>';
+    '<button id=dl style="font-size:14px">'+L('dl')+'</button>'+
+    '<span style="font-size:12px;color:#64748b">'+esc(L('dlhint'))+'</span></div>';
  // Detail + remediation
- h+='<h2 style="margin:20px 0 2px">What applies — and what to do</h2>'+
-   '<p class=sub>'+d.items.length+' applicable regulation(s), highest priority first.</p>';
+ h+='<h2 style="margin:20px 0 2px">'+esc(L('whatapplies'))+'</h2>'+
+   '<p class=sub>'+d.items.length+esc(L('applies1'))+'</p>';
  for(const it of d.items){
   const sev=it.severity==='high'?'high':'medium';
   h+='<div class="item '+sev+'"><h3>'+esc(it.regulation)+
      ' <span class="badge '+sev+'">'+sev+'</span>'+
-     (it.needs_review?' <span class="badge rev">needs legal review</span>':'')+
-     (it.meta&&it.meta.in_force?' <span style="font-size:11px;color:#64748b;font-weight:500">· in force '+esc(it.meta.in_force)+'</span>':'')+'</h3>'+
+     (it.needs_review?' <span class="badge rev">'+esc(L('needsrev'))+'</span>':'')+
+     (it.meta&&it.meta.in_force?' <span style="font-size:11px;color:#64748b;font-weight:500">· '+esc(L('inforce'))+' '+esc(it.meta.in_force)+'</span>':'')+'</h3>'+
      '<div class=reason>'+esc(it.applies_reason)+'</div>'+
      '<div class=obl>'+mdbold(it.obligations)+'</div>';
   if(it.actions&&it.actions.length){
-   h+='<div style="font-size:11px;font-weight:700;color:#334155;margin:13px 0 4px;text-transform:uppercase;letter-spacing:.06em">Remediation plan</div>'+
+   h+='<div style="font-size:11px;font-weight:700;color:#334155;margin:13px 0 4px;text-transform:uppercase;letter-spacing:.06em">'+esc(L('remplan'))+'</div>'+
       '<ol style="margin:0;padding-left:18px">';
    for(const s of it.actions)
     h+='<li style="margin:5px 0;font-size:13.5px">'+esc(s.action)+' <span style="font:12px ui-monospace,Menlo,monospace;color:#2563eb">— '+esc(s.ref)+'</span></li>';
@@ -783,14 +878,14 @@ function render(d){
   h+='</div>';
  }
  if(d.not_applicable&&d.not_applicable.length)
-  h+='<div class=na>Not flagged from this profile: '+d.not_applicable.map(esc).join(', ')+' — revisit if your product or sector changes.</div>';
- h+='<div class=meta>Run cost: $'+(d.cost_usd||0)+' · grounded in cited articles · preliminary exposure score, decision-support, not legal advice.</div>';
+  h+='<div class=na>'+esc(L('notflagged1'))+d.not_applicable.map(esc).join(', ')+esc(L('notflagged2'))+'</div>';
+ h+='<div class=meta>'+esc(L('runcost'))+(d.cost_usd||0)+esc(L('scorenote'))+'</div>';
  o.innerHTML=h; o.style.display='block'; o.scrollIntoView({behavior:'smooth'});
  const dlb=$('dl'); if(dlb) dlb.onclick=downloadReport;
 }
 async function downloadReport(){
  const d=window._assess; if(!d) return;
- const btn=$('dl'); const old=btn.textContent; btn.disabled=true; btn.textContent='Preparing…';
+ const btn=$('dl'); const old=btn.textContent; btn.disabled=true; btn.textContent=L('preparing');
  try{
   const body=Object.assign({description:$('desc').value}, d);
   const r=await fetch('/assess/report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
@@ -801,4 +896,9 @@ async function downloadReport(){
  }catch(e){alert('Could not generate report: '+e);}
  btn.textContent=old; btn.disabled=false;
 }
+// --- init: language toggle, custom file picker, auto-detect language ---
+document.querySelectorAll('.langtog button').forEach(function(b){b.onclick=function(){applyLang(b.getAttribute('data-lang'));};});
+$('choose').onclick=function(){$('doc').click();};
+$('doc').onchange=function(){var f=$('doc').files[0]; $('fname').textContent=f?f.name:L('nofile');};
+applyLang((navigator.language||'').toLowerCase().indexOf('fr')===0?'fr':'en');
 </script></body></html>"""
