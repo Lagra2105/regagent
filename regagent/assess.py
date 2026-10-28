@@ -40,14 +40,28 @@ REG_META: dict[str, dict] = {
                       {"date": "2 Dec 2027", "iso": "2027-12-02", "what": "High-risk — Annex III (standalone systems)"},
                       {"date": "2 Aug 2028", "iso": "2028-08-02", "what": "High-risk — Annex I (embedded in regulated products)"}]},
     "GDPR":      {"full": "Regulation (EU) 2016/679",
-                  "in_force": "25 May 2018", "note": "In force."},
+                  "in_force": "25 May 2018", "note": "In force.",
+                  "timeline": [
+                      {"date": "27 Apr 2016", "iso": "2016-04-27", "what": "Adopted"},
+                      {"date": "25 May 2018", "iso": "2018-05-25", "what": "Applies (after a 2-year transition)"}]},
     "DORA":      {"full": "Regulation (EU) 2022/2554",
-                  "in_force": "17 Jan 2025", "note": "Applies to financial entities."},
+                  "in_force": "17 Jan 2025", "note": "Applies to financial entities.",
+                  "timeline": [
+                      {"date": "16 Jan 2023", "iso": "2023-01-16", "what": "Entered into force"},
+                      {"date": "17 Jan 2025", "iso": "2025-01-17", "what": "Applies to financial entities & ICT third-party providers"}]},
     "NIS2":      {"full": "Directive (EU) 2022/2555",
-                  "in_force": "Oct 2024", "note": "National transposition ongoing."},
+                  "in_force": "Oct 2024", "note": "National transposition ongoing.",
+                  "timeline": [
+                      {"date": "16 Jan 2023", "iso": "2023-01-16", "what": "Directive entered into force"},
+                      {"date": "17 Oct 2024", "iso": "2024-10-17", "what": "Member-State transposition deadline"},
+                      {"date": "18 Oct 2024", "iso": "2024-10-18", "what": "National rules apply (transposition still ongoing in some States)"}]},
     "MiCA":      {"full": "Regulation (EU) 2023/1114",
                   "in_force": "30 Jun 2024 (ART/EMT) · 30 Dec 2024 (CASPs)",
-                  "note": "Phased application 2024–2025."},
+                  "note": "Phased application 2024–2025.",
+                  "timeline": [
+                      {"date": "29 Jun 2023", "iso": "2023-06-29", "what": "Entered into force"},
+                      {"date": "30 Jun 2024", "iso": "2024-06-30", "what": "Rules for asset-referenced & e-money tokens (ART/EMT)"},
+                      {"date": "30 Dec 2024", "iso": "2024-12-30", "what": "Rules for crypto-asset service providers (CASPs)"}]},
 }
 
 
