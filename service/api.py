@@ -617,6 +617,10 @@ _ASSESS_HTML = r"""<!doctype html><html lang=en><head><meta charset=utf-8>
 .fname{font-size:13px;color:var(--mut);flex:1;min-width:120px}
 .hint{color:var(--mut);font-size:12.5px;margin:2px 0 10px}
 .upmsg{font-size:12px;color:var(--mut);display:block;margin:0 0 6px;min-height:14px}
+.examples{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 12px}
+.exlbl{font-size:12.5px;color:var(--mut)}
+.ex{background:#fff;color:var(--accent);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font:12.5px inherit;font-weight:600;cursor:pointer}
+.ex:hover{background:#eff6ff;border-color:var(--accent)}
 h1{font-size:26px;margin:6px 0 4px}.sub{color:var(--mut);margin:0 0 14px}
 .disc{background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;border-radius:10px;
  padding:10px 13px;font-size:13px;margin:0 0 20px}
@@ -694,6 +698,11 @@ button:disabled{opacity:.6;cursor:progress}
  </div>
  <span id=upmsg class=upmsg></span>
  <div class=hint data-i18n=uploadhint>…or upload a pitch / one-pager (PDF, DOCX, TXT) — we read it and fill the form for you to review.</div>
+ <div class=examples><span class=exlbl data-i18n=tryexample>Try an example:</span>
+  <button type=button class=ex data-ex=hiring data-i18n=ex_hiring>AI hiring</button>
+  <button type=button class=ex data-ex=crypto data-i18n=ex_crypto>Crypto exchange</button>
+  <button type=button class=ex data-ex=saas data-i18n=ex_saas>AI SaaS</button>
+ </div>
 
  <label class="chk"><input type=checkbox id=uses_ai><span><span class=t data-i18n=ai_t>Our product uses AI / ML</span><span class="d" data-i18n=ai_d> — models that make predictions, classifications or generate content</span></span></label>
  <div class=sub-opts id=ai_opts>
@@ -740,6 +749,8 @@ const T={
   descph:"e.g. A SaaS platform that screens job candidates by scoring their CVs with a machine-learning model, for EU employers.",
   choose:"📎 Choose a file",nofile:"No file chosen",prefill:"Read & pre-fill →",
   uploadhint:"…or upload a pitch / one-pager (PDF, DOCX, TXT) — we read it and fill the form for you to review.",
+  tryexample:"Try an example:",ex_hiring:"AI hiring",ex_crypto:"Crypto exchange",ex_saas:"AI SaaS",
+  sincelast:"Since your last check:",nowapplies:"now applies",nolonger:"no longer flagged",
   ai_t:"Our product uses AI / ML",ai_d:" — models that make predictions, classifications or generate content",
   hralabel:"What does the AI do? (determines risk tier)",
   o_other:"Other / general purpose",o_hiring:"Hiring, recruitment or worker management",
@@ -776,6 +787,8 @@ const T={
   descph:"ex. une plateforme SaaS qui présélectionne des candidats en notant leurs CV avec un modèle de machine learning, pour des employeurs de l'UE.",
   choose:"📎 Choisir un fichier",nofile:"Aucun fichier choisi",prefill:"Lire & pré-remplir →",
   uploadhint:"…ou importez un pitch / une page de présentation (PDF, DOCX, TXT) — nous le lisons et remplissons le formulaire pour vous.",
+  tryexample:"Essayer un exemple :",ex_hiring:"IA recrutement",ex_crypto:"Plateforme crypto",ex_saas:"SaaS avec IA",
+  sincelast:"Depuis votre dernière vérification :",nowapplies:"s'applique désormais",nolonger:"plus signalé",
   ai_t:"Notre produit utilise l'IA / le ML",ai_d:" — des modèles qui font des prédictions, des classifications ou génèrent du contenu",
   hralabel:"Que fait l'IA ? (détermine le niveau de risque)",
   o_other:"Autre / usage général",o_hiring:"Embauche, recrutement ou gestion du personnel",
@@ -825,6 +838,11 @@ function applyProfile(p){
  $('fin').checked=!!p.financial_entity; $('crit').checked=!!p.critical_entity;
  $('crypto').checked=!!p.crypto_assets; $('monaco').checked=!!p.based_in_monaco;
 }
+const EXAMPLES={
+ hiring:{description:"A SaaS platform that screens job candidates for EU employers by scoring their CVs with a machine-learning model and automatically ranking applicants.",uses_ai:true,high_risk_area:"hiring",personal_data:true,automated_decisions:true},
+ crypto:{description:"A crypto-asset exchange and custodial wallet operating in the EU, letting users trade and store tokens and stablecoins, with full KYC onboarding.",crypto_assets:true,financial_entity:true,personal_data:true},
+ saas:{description:"A B2B project-management SaaS for EU companies with an AI assistant that summarizes tasks and suggests deadlines. It stores user names, emails and activity logs.",uses_ai:true,high_risk_area:"",personal_data:true}
+};
 $('upbtn').onclick=async()=>{
  const f=$('doc').files[0]; const m=$('upmsg');
  if(!f){m.textContent=L('upchoose');return;}
@@ -862,6 +880,16 @@ function render(d){
  const bc=bandColor(d.band);
  window._assess=d;
  let h='';
+ try{var _prev=JSON.parse(localStorage.getItem('regagent_last')||'null');
+  if(_prev){var _p=[];
+   if(_prev.score!=null&&d.score!=null&&_prev.score!==d.score){var _dl=d.score-_prev.score;_p.push('score '+_prev.score+' → '+d.score+' ('+(_dl>0?'+':'')+_dl+')');}
+   var _nr=d.items.map(function(i){return i.regulation;});
+   var _add=_nr.filter(function(r){return (_prev.regs||[]).indexOf(r)<0;});
+   var _rem=(_prev.regs||[]).filter(function(r){return _nr.indexOf(r)<0;});
+   if(_add.length)_p.push(_add.join(', ')+' '+L('nowapplies'));
+   if(_rem.length)_p.push(_rem.join(', ')+' '+L('nolonger'));
+   if(_p.length)h+='<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 13px;margin:0 0 14px;font-size:13px;color:#1e40af"><b>'+esc(L('sincelast'))+'</b> '+_p.map(esc).join(' · ')+'</div>';
+  }}catch(e){}
  // Score header
  h+='<div style="display:flex;align-items:center;gap:20px;margin:12px 0 2px;flex-wrap:wrap">'+
   '<div style="width:98px;height:98px;border-radius:50%;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;border:7px solid '+bc+'">'+
@@ -916,6 +944,7 @@ function render(d){
  h+='<div class=meta>'+esc(L('runcost'))+(d.cost_usd||0)+esc(L('scorenote'))+'</div>';
  o.innerHTML=h; o.style.display='block'; o.scrollIntoView({behavior:'smooth'});
  const dlb=$('dl'); if(dlb) dlb.onclick=downloadReport;
+ try{localStorage.setItem('regagent_last',JSON.stringify({score:d.score,regs:d.items.map(function(i){return i.regulation;}),ts:Date.now()}));}catch(e){}
 }
 async function downloadReport(){
  const d=window._assess; if(!d) return;
@@ -934,5 +963,6 @@ async function downloadReport(){
 document.querySelectorAll('.langtog button').forEach(function(b){b.onclick=function(){applyLang(b.getAttribute('data-lang'));};});
 $('choose').onclick=function(){$('doc').click();};
 $('doc').onchange=function(){var f=$('doc').files[0]; $('fname').textContent=f?f.name:L('nofile');};
+document.querySelectorAll('.ex').forEach(function(b){b.onclick=function(){applyProfile(EXAMPLES[b.getAttribute('data-ex')]);};});
 applyLang((navigator.language||'').toLowerCase().indexOf('fr')===0?'fr':'en');
 </script></body></html>"""
