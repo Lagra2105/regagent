@@ -760,6 +760,7 @@ const T={
   dl:"⬇ Download PDF report",dlhint:"Shareable one-page summary — score, map & remediation",
   whatapplies:"What applies — and what to do",applies1:" applicable regulation(s), highest priority first.",
   remplan:"Remediation plan",needsrev:"needs legal review",inforce:"in force",
+  phasein:"Phase-in timeline",upcoming:"(not yet — upcoming)",
   notflagged1:"Not flagged from this profile: ",notflagged2:" — revisit if your product or sector changes.",
   runcost:"Run cost: $",
   scorenote:" · grounded in cited articles · preliminary exposure score, decision-support, not legal advice.",
@@ -795,6 +796,7 @@ const T={
   dl:"⬇ Télécharger le rapport PDF",dlhint:"Résumé partageable d'une page — score, carte & remédiation",
   whatapplies:"Ce qui s'applique — et quoi faire",applies1:" réglementation(s) applicable(s), par ordre de priorité.",
   remplan:"Plan de remédiation",needsrev:"revue juridique requise",inforce:"en vigueur",
+  phasein:"Calendrier d'application",upcoming:"(pas encore — à venir)",
   notflagged1:"Non signalé pour ce profil : ",notflagged2:" — à revoir si votre produit ou secteur change.",
   runcost:"Coût d'analyse : $",
   scorenote:" · fondé sur des articles cités · score d'exposition préliminaire, aide à la décision, pas un conseil juridique.",
@@ -891,6 +893,13 @@ function render(d){
      (it.meta&&it.meta.in_force?' <span style="font-size:11px;color:#64748b;font-weight:500">· '+esc(L('inforce'))+' '+esc(it.meta.in_force)+'</span>':'')+'</h3>'+
      '<div class=reason>'+esc(it.applies_reason)+'</div>'+
      '<div class=obl>'+mdbold(it.obligations)+'</div>';
+  if(it.meta&&it.meta.timeline&&it.meta.timeline.length){
+   h+='<div style="font-size:11px;font-weight:700;color:#334155;margin:13px 0 4px;text-transform:uppercase;letter-spacing:.06em">'+esc(L('phasein'))+'</div><ul style="list-style:none;margin:0;padding:0">';
+   const today=new Date();
+   for(const t of it.meta.timeline){const on=new Date(t.iso)<=today;
+    h+='<li style="font-size:12.5px;margin:3px 0;color:'+(on?'#166534':'#64748b')+'">'+(on?'✓ ':'⏳ ')+'<b>'+esc(t.date)+'</b> — '+esc(t.what)+(on?'':' '+esc(L('upcoming')))+'</li>';}
+   h+='</ul>';
+  }
   if(it.actions&&it.actions.length){
    h+='<div style="font-size:11px;font-weight:700;color:#334155;margin:13px 0 4px;text-transform:uppercase;letter-spacing:.06em">'+esc(L('remplan'))+'</div>'+
       '<ol style="margin:0;padding-left:18px">';

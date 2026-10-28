@@ -31,7 +31,14 @@ ALL_REGS = ["EU AI Act", "GDPR", "DORA", "NIS2", "MiCA"]
 REG_META: dict[str, dict] = {
     "EU AI Act": {"full": "Regulation (EU) 2024/1689",
                   "in_force": "1 Aug 2024",
-                  "note": "High-risk obligations apply from 2 Aug 2026."},
+                  "note": "Phased application; high-risk deadlines extended by the 2026 Digital Omnibus (Reg. (EU) 2026/1744).",
+                  "timeline": [
+                      {"date": "1 Aug 2024", "iso": "2024-08-01", "what": "Entered into force"},
+                      {"date": "2 Feb 2025", "iso": "2025-02-02", "what": "Prohibited practices + AI-literacy duties"},
+                      {"date": "2 Aug 2025", "iso": "2025-08-02", "what": "GPAI models, governance & penalties"},
+                      {"date": "2 Aug 2026", "iso": "2026-08-02", "what": "General application + transparency (Art. 50)"},
+                      {"date": "2 Dec 2027", "iso": "2027-12-02", "what": "High-risk — Annex III (standalone systems)"},
+                      {"date": "2 Aug 2028", "iso": "2028-08-02", "what": "High-risk — Annex I (embedded in regulated products)"}]},
     "GDPR":      {"full": "Regulation (EU) 2016/679",
                   "in_force": "25 May 2018", "note": "In force."},
     "DORA":      {"full": "Regulation (EU) 2022/2554",

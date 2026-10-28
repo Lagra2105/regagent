@@ -186,6 +186,17 @@ def build_report_pdf(data: dict) -> bytes:
             if para.strip():
                 block.append(Paragraph(_xml(para.strip()), S["body"]))
 
+        tl = (it.get("meta") or {}).get("timeline") or []
+        if tl:
+            today = datetime.date.today().isoformat()
+            block.append(Paragraph("PHASE-IN TIMELINE", S["small"]))
+            for t in tl:
+                on = (t.get("iso", "") <= today)
+                label = ('<font color="#166534"><b>APPLIES</b></font>' if on
+                         else '<font color="#b45309">UPCOMING</font>')
+                block.append(Paragraph("%s &nbsp; <b>%s</b> — %s"
+                             % (label, _xml(t.get("date", "")), _xml(t.get("what", ""))), S["li"]))
+
         actions = it.get("actions") or []
         if actions:
             block.append(Paragraph("REMEDIATION PLAN", S["small"]))
