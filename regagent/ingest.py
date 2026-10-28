@@ -365,6 +365,40 @@ GDPR = [
      "the data subjects' rights shall be subject to administrative fines up to 20 000 "
      "000 EUR, or in the case of an undertaking up to 4 % of the total worldwide annual "
      "turnover of the preceding financial year, whichever is higher."),
+    ("GDPR — Article 12 (Transparent information and communication)",
+     "The controller shall take appropriate measures to provide any information and "
+     "communication relating to processing to the data subject in a concise, transparent, "
+     "intelligible and easily accessible form, using clear and plain language, and shall "
+     "facilitate the exercise of the data subject's rights without undue delay."),
+    ("GDPR — Article 13 (Information where data collected from the data subject)",
+     "Where personal data are collected from the data subject, the controller shall provide, "
+     "at the time of collection, its identity and contact details, the purposes and legal "
+     "basis of the processing, the recipients, any intended transfers, the storage period, "
+     "and the data subject's rights, including the right to lodge a complaint."),
+    ("GDPR — Article 14 (Information where data not obtained from the data subject)",
+     "Where personal data have not been obtained from the data subject, the controller shall "
+     "provide information on its identity, the purposes and legal basis, the categories of "
+     "data, the source of the data, the recipients and the data subject's rights, within a "
+     "reasonable period and at the latest within one month."),
+    ("GDPR — Article 24 (Responsibility of the controller)",
+     "The controller shall implement appropriate technical and organisational measures to "
+     "ensure and to be able to demonstrate that processing is performed in accordance with "
+     "this Regulation, and shall review and update those measures where necessary."),
+    ("GDPR — Article 28 (Processor)",
+     "Processing by a processor shall be governed by a binding contract setting out the "
+     "subject-matter, duration, nature and purpose of the processing; the processor shall "
+     "act only on the controller's documented instructions, ensure confidentiality, implement "
+     "Article 32 security measures, assist the controller, and delete or return the data at "
+     "the end of the service."),
+    ("GDPR — Article 44 (General principle for transfers)",
+     "Any transfer of personal data to a third country or international organisation may take "
+     "place only if the conditions of Chapter V are complied with, so that the level of "
+     "protection of natural persons guaranteed by this Regulation is not undermined."),
+    ("GDPR — Article 46 (Transfers subject to appropriate safeguards)",
+     "In the absence of an adequacy decision, a controller or processor may transfer personal "
+     "data to a third country only if appropriate safeguards are provided — such as standard "
+     "contractual clauses, binding corporate rules or an approved code of conduct — and "
+     "enforceable data subject rights and effective legal remedies are available."),
 ]
 
 
