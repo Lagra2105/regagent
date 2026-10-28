@@ -9,6 +9,8 @@ Run:  uvicorn service.api:app --reload --port 8000
 from __future__ import annotations
 
 import os
+import json
+import secrets
 
 from fastapi import FastAPI, Header, HTTPException, Depends, Request, UploadFile, File
 from fastapi.responses import HTMLResponse, Response
@@ -269,6 +271,77 @@ def assess_report(body: ReportIn) -> Response:
         content=pdf, media_type="application/pdf",
         headers={"Content-Disposition": 'attachment; filename="RegAgent-compliance-report.pdf"'},
     )
+
+
+class _ResultsStore:
+    """Persist shared assessment results. Uses Postgres when a DB URL is set
+    (RESULTS_DB_URL or DATABASE_URL) so share links survive restarts; otherwise
+    an in-memory dict (links live until the service restarts). Set RESULTS_DB_URL
+    on a proper deployment and links become permanent — no code change."""
+
+    def __init__(self) -> None:
+        self.dsn = os.environ.get("RESULTS_DB_URL") or os.environ.get("DATABASE_URL")
+        self.mem: dict = {}
+        if self.dsn:
+            try:
+                import psycopg
+                self._pg = psycopg
+                with psycopg.connect(self.dsn) as con:
+                    con.execute("CREATE TABLE IF NOT EXISTS assess_results ("
+                                "id TEXT PRIMARY KEY, data JSONB NOT NULL, "
+                                "created_at TIMESTAMPTZ DEFAULT now())")
+            except Exception:
+                self.dsn = None   # any DB error → safe in-memory fallback
+
+    def save(self, data: dict) -> str:
+        rid = secrets.token_urlsafe(8)
+        if self.dsn:
+            try:
+                from psycopg.types.json import Json
+                with self._pg.connect(self.dsn) as con:
+                    con.execute("INSERT INTO assess_results (id, data) VALUES (%s, %s)",
+                                (rid, Json(data)))
+                return rid
+            except Exception:
+                pass
+        self.mem[rid] = data
+        return rid
+
+    def get(self, rid: str):
+        if self.dsn:
+            try:
+                with self._pg.connect(self.dsn) as con:
+                    row = con.execute("SELECT data FROM assess_results WHERE id=%s",
+                                      (rid,)).fetchone()
+                if row:
+                    d = row[0]
+                    return json.loads(d) if isinstance(d, str) else d
+            except Exception:
+                pass
+        return self.mem.get(rid)
+
+
+_results = _ResultsStore()
+
+
+@app.post("/assess/save", dependencies=[Depends(rate_limit)])
+def assess_save(body: ReportIn) -> dict:
+    """Save an assessment result and return a shareable id → /r/<id>."""
+    return {"id": _results.save(body.model_dump())}
+
+
+@app.get("/assess/result/{rid}")
+def assess_result(rid: str) -> dict:
+    data = _results.get(rid)
+    if not data:
+        raise HTTPException(status_code=404, detail="not found")
+    return data
+
+
+@app.get("/r/{rid}", response_class=HTMLResponse)
+def shared_result(rid: str) -> str:
+    """Read-only shared view — the page loads the saved result by id."""
+    return _ASSESS_HTML
 
 
 @app.get("/assess", response_class=HTMLResponse)
@@ -687,7 +760,7 @@ button:disabled{opacity:.6;cursor:progress}
 <p class=sub data-i18n=sub>Describe your product. RegAgent identifies which EU regulations apply and builds a grounded, actionable compliance roadmap.</p>
 <div class=disc><b data-i18n=disc_b>Decision-support triage, not legal advice.</b> <span data-i18n=disc_r>Requirements are grounded in cited articles; confirm with qualified counsel before relying on them.</span></div>
 
-<div class=card>
+<div class=card id=form>
  <label class=q for=desc data-i18n=desclabel>Describe your product (a few sentences)</label>
  <textarea id=desc data-i18n-ph=descph placeholder="e.g. A SaaS platform that screens job candidates by scoring their CVs with a machine-learning model, for EU employers."></textarea>
  <div class=upload>
@@ -751,6 +824,7 @@ const T={
   uploadhint:"…or upload a pitch / one-pager (PDF, DOCX, TXT) — we read it and fill the form for you to review.",
   tryexample:"Try an example:",ex_hiring:"AI hiring",ex_crypto:"Crypto exchange",ex_saas:"AI SaaS",
   sincelast:"Since your last check:",nowapplies:"now applies",nolonger:"no longer flagged",
+  share:"🔗 Share link",linkcopied:"Link copied:",sharedview:"Shared assessment (read-only)",
   ai_t:"Our product uses AI / ML",ai_d:" — models that make predictions, classifications or generate content",
   hralabel:"What does the AI do? (determines risk tier)",
   o_other:"Other / general purpose",o_hiring:"Hiring, recruitment or worker management",
@@ -789,6 +863,7 @@ const T={
   uploadhint:"…ou importez un pitch / une page de présentation (PDF, DOCX, TXT) — nous le lisons et remplissons le formulaire pour vous.",
   tryexample:"Essayer un exemple :",ex_hiring:"IA recrutement",ex_crypto:"Plateforme crypto",ex_saas:"SaaS avec IA",
   sincelast:"Depuis votre dernière vérification :",nowapplies:"s'applique désormais",nolonger:"plus signalé",
+  share:"🔗 Lien de partage",linkcopied:"Lien copié :",sharedview:"Évaluation partagée (lecture seule)",
   ai_t:"Notre produit utilise l'IA / le ML",ai_d:" — des modèles qui font des prédictions, des classifications ou génèrent du contenu",
   hralabel:"Que fait l'IA ? (détermine le niveau de risque)",
   o_other:"Autre / usage général",o_hiring:"Embauche, recrutement ou gestion du personnel",
@@ -880,7 +955,8 @@ function render(d){
  const bc=bandColor(d.band);
  window._assess=d;
  let h='';
- try{var _prev=JSON.parse(localStorage.getItem('regagent_last')||'null');
+ if(window._shared) h+='<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:8px 12px;margin:0 0 12px;font-size:12.5px;color:#166534">'+esc(L('sharedview'))+'</div>';
+ if(!window._shared) try{var _prev=JSON.parse(localStorage.getItem('regagent_last')||'null');
   if(_prev){var _p=[];
    if(_prev.score!=null&&d.score!=null&&_prev.score!==d.score){var _dl=d.score-_prev.score;_p.push('score '+_prev.score+' → '+d.score+' ('+(_dl>0?'+':'')+_dl+')');}
    var _nr=d.items.map(function(i){return i.regulation;});
@@ -909,7 +985,9 @@ function render(d){
  // Download report
  h+='<div style="margin:16px 0 2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">'+
     '<button id=dl style="font-size:14px">'+L('dl')+'</button>'+
-    '<span style="font-size:12px;color:#64748b">'+esc(L('dlhint'))+'</span></div>';
+    (window._shared?'':'<button id=sh style="font-size:14px;background:#fff;color:#2563eb;border:1px solid #2563eb">'+L('share')+'</button>')+
+    '<span style="font-size:12px;color:#64748b">'+esc(L('dlhint'))+'</span></div>'+
+    '<div id=shlink style="font-size:12.5px;color:#166534;margin:4px 0"></div>';
  // Detail + remediation
  h+='<h2 style="margin:20px 0 2px">'+esc(L('whatapplies'))+'</h2>'+
    '<p class=sub>'+d.items.length+esc(L('applies1'))+'</p>';
@@ -944,7 +1022,8 @@ function render(d){
  h+='<div class=meta>'+esc(L('runcost'))+(d.cost_usd||0)+esc(L('scorenote'))+'</div>';
  o.innerHTML=h; o.style.display='block'; o.scrollIntoView({behavior:'smooth'});
  const dlb=$('dl'); if(dlb) dlb.onclick=downloadReport;
- try{localStorage.setItem('regagent_last',JSON.stringify({score:d.score,regs:d.items.map(function(i){return i.regulation;}),ts:Date.now()}));}catch(e){}
+ const shb=$('sh'); if(shb) shb.onclick=shareResult;
+ if(!window._shared) try{localStorage.setItem('regagent_last',JSON.stringify({score:d.score,regs:d.items.map(function(i){return i.regulation;}),ts:Date.now()}));}catch(e){}
 }
 async function downloadReport(){
  const d=window._assess; if(!d) return;
@@ -959,10 +1038,29 @@ async function downloadReport(){
  }catch(e){alert('Could not generate report: '+e);}
  btn.textContent=old; btn.disabled=false;
 }
+async function shareResult(){
+ const d=window._assess; if(!d) return;
+ const btn=$('sh'); const old=btn.textContent; btn.disabled=true; btn.textContent=L('preparing');
+ try{
+  const body=Object.assign({description:$('desc')?$('desc').value:''}, d);
+  const r=await fetch('/assess/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  const j=await r.json(); const url=location.origin+'/r/'+j.id;
+  try{await navigator.clipboard.writeText(url);}catch(e){}
+  $('shlink').innerHTML=esc(L('linkcopied'))+' <a href="'+esc(url)+'" style="color:#2563eb">'+esc(url)+'</a>';
+ }catch(e){$('shlink').textContent='Error: '+e;}
+ btn.textContent=old; btn.disabled=false;
+}
 // --- init: language toggle, custom file picker, auto-detect language ---
 document.querySelectorAll('.langtog button').forEach(function(b){b.onclick=function(){applyLang(b.getAttribute('data-lang'));};});
 $('choose').onclick=function(){$('doc').click();};
 $('doc').onchange=function(){var f=$('doc').files[0]; $('fname').textContent=f?f.name:L('nofile');};
 document.querySelectorAll('.ex').forEach(function(b){b.onclick=function(){applyProfile(EXAMPLES[b.getAttribute('data-ex')]);};});
 applyLang((navigator.language||'').toLowerCase().indexOf('fr')===0?'fr':'en');
+(function(){var m=location.pathname.match(/^\/r\/([^\/?#]+)/); if(!m) return;
+ window._shared=true; var fc=$('form'); if(fc) fc.style.display='none';
+ fetch('/assess/result/'+m[1]).then(function(r){return r.ok?r.json():null;}).then(function(d){
+  if(d&&d.items){render(d);} else {$('out').innerHTML='<div class=card>Not found</div>';$('out').style.display='block';}
+ }).catch(function(){$('out').innerHTML='<div class=card>Not found</div>';$('out').style.display='block';});
+})();
 </script></body></html>"""
