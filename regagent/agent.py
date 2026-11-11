@@ -45,8 +45,35 @@ _LANG_NAME = {"en": "English", "fr": "French"}
 
 def _lang_instruction(lang: str) -> str:
     if not lang or lang == "auto":
-        return " Respond in the same language as the question."
-    return f" Respond in {_LANG_NAME.get(lang, 'English')}."
+        # Belt-and-suspenders: lang is normally resolved to en/fr upstream.
+        return (" Respond in English, or in French if the question is written in "
+                "French. Do not use any other language.")
+    return (f" Respond strictly in {_LANG_NAME.get(lang, 'English')}. "
+            "Do not use any other language.")
+
+
+def _detect_lang(text: str) -> str:
+    """Pick the answer language (en/fr) from the question, deterministically.
+
+    Only English and French are supported; anything else defaults to English.
+    This stops the model from drifting into a third language (e.g. Spanish),
+    which the 'respond in the same language' instruction allowed."""
+    t = (text or "").lower()
+    if re.search(r"[àâçéèêëîïôùûüœ]", t):   # French diacritics → French
+        return "fr"
+    fr_cues = {"le", "la", "les", "des", "une", "est", "sont", "quel", "quelle",
+               "quels", "quelles", "sous", "selon", "doit", "doivent", "peut",
+               "peuvent", "règlement", "données", "autorisé", "autorisée",
+               "citoyens", "entreprise", "pour", "dans", "avec", "vie", "privée"}
+    words = set(re.findall(r"[a-zàâçéèêëîïôùûüœ']+", t))
+    return "fr" if len(words & fr_cues) >= 2 else "en"
+
+
+def _resolve_lang(lang: str, question: str) -> str:
+    """Resolve 'auto'/empty/unsupported to a concrete supported language (en/fr)."""
+    if not lang or lang == "auto":
+        return _detect_lang(question)
+    return lang if lang in _LANG_NAME else "en"
 
 
 # Localised abstention messages (auto/en default to English; fr is translated).
@@ -116,6 +143,7 @@ def answer_question(store: DocStore, question: str, customer: str = "demo",
                     graph: KnowledgeGraph | None = None,
                     bm25: BM25Index | None = None, lang: str = "auto") -> Answer:
     """Run the multi-step agent on one question, tracked end-to-end by agentcost."""
+    lang = _resolve_lang(lang, question)
     with track("reg-answer", customer=customer, feature="compliance-qa",
                budget_usd=0.50, sink=SINK) as run:
         # 1) route / classify
@@ -266,6 +294,7 @@ def answer_complex(store: DocStore, question: str, customer: str = "demo",
                    graph: KnowledgeGraph | None = None,
                    bm25: BM25Index | None = None, lang: str = "auto") -> ComplexAnswer:
     """Plan → run each sub-question through the pipeline → synthesise. Tracked."""
+    lang = _resolve_lang(lang, question)
     with track("reg-analyze", customer=customer, feature="multi-reg-analysis",
                budget_usd=1.0, sink=SINK) as run:
         subs, plan_raw = plan_subquestions(question, lang=lang)
